@@ -14,7 +14,7 @@ resource "openstack_compute_instance_v2" "webserver" {
     name = "frontend"
   }
 
-  user_data = file("scripts/provision-ws.sh")
+  user_data = file("../scripts/provision-ws.sh")
   metadata = {
     db_name = var.database_name
     db_user = var.database_user

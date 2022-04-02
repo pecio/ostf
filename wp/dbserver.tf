@@ -14,7 +14,7 @@ resource "openstack_compute_instance_v2" "dbserver" {
     name = "backend"
   }
 
-  user_data = file("scripts/provision-db-vol.sh")
+  user_data = file("../scripts/provision-db-vol.sh")
   metadata = {
     db_name = var.database_name
     db_user = var.database_user
