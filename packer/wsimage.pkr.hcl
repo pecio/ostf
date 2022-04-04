@@ -11,7 +11,6 @@ source "openstack" "wsimage" {
     }
   }
   security_groups           = ["default", "ssh"]
-  networks                  = ["7ce30c31-9197-4ec4-83c8-3d9c28af5cd9"]
   floating_ip_network       = "public"
   ssh_clear_authorized_keys = true
 }
