@@ -23,6 +23,6 @@ without arguments after installing the prerequisites documented in that
 page will generate an `amphora-x64-haproxy.qcow2` file in the current
 directory and you just have to run
 ```
-openstack image create amphora-x64-haproxy --public --file amphora-x64-haproxy.qcow2
+openstack image create amphora-x64-haproxy --public --disk-format qcow2 --file amphora-x64-haproxy.qcow2
 ```
 in order to import it in Glance.
