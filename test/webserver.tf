@@ -8,15 +8,15 @@ terraform {
   }
 }
 
-resource "openstack_compute_instance_v2" "test" {
-  name            = "test"
-  image_id        = "a54073fa-dc7e-4c64-94c4-654f0856b8bd"
+resource "openstack_compute_instance_v2" "webserver" {
+  name            = "webserver"
+  image_name      = "wsimage"
   flavor_id       = "d2"
   key_pair        = "bichejo"
-  security_groups = ["default"]
+  security_groups = ["default", "ssh"]
 
   network {
-    name = "frontend"
+    name = "private"
   }
 }
 
@@ -26,9 +26,9 @@ resource "openstack_compute_floatingip_v2" "floatingip1" {
 
 resource "openstack_compute_floatingip_associate_v2" "fip1" {
   floating_ip = openstack_compute_floatingip_v2.floatingip1.address
-  instance_id = openstack_compute_instance_v2.test.id
+  instance_id = openstack_compute_instance_v2.webserver.id
 }
 
-output "address" {
+output "webserver_address" {
   value = openstack_compute_floatingip_v2.floatingip1.address
 }
