@@ -8,6 +8,7 @@ source "openstack" "wsimage" {
       properties = {
         os_distro = "ubuntu"
       }
+      visibility = "public"
     }
   }
   security_groups           = ["default", "ssh"]
@@ -16,5 +17,9 @@ source "openstack" "wsimage" {
 }
 
 build {
+  name    = "wsimage"
   sources = ["source.openstack.wsimage"]
+  provisioner "ansible" {
+    playbook_file = "playbooks/wsimage.yml"
+  }
 }

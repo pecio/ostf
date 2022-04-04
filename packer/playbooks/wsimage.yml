@@ -1,0 +1,27 @@
+---
+- name: Setup Apache and PHP in Ubuntu
+  hosts: all
+  become: true
+  tasks:
+    - name: Upgrade system packages
+      apt:
+        upgrade: safe
+        update_cache: true
+
+    - name: Install software
+      apt:
+        name:
+          - apache2
+          - libapache2-mod-php
+          - php
+          - php-gd
+          - php-mysql
+          - qemu-guest-agent
+        autoclean: yes
+        autoremove: yes
+
+    - name: Clean apt cache
+      command: /usr/bin/apt-get clean
+      args:
+        warn: false
+...
