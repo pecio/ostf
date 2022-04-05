@@ -7,6 +7,7 @@ source "openstack" "wsimage" {
   security_groups              = ["ssh"]
   floating_ip_network          = "public"
   ssh_clear_authorized_keys    = true
+  network_discovery_cidrs      = ["10.0.0.0/26"]
 }
 
 build {
