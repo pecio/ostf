@@ -1,0 +1,16 @@
+---
+- name: Setup MariaDB in Ubuntu
+  hosts: all
+  become: true
+  tasks:
+    - name: Upgrade system packages
+      apt:
+        upgrade: safe
+        update_cache: true
+
+    - name: Install software
+      apt:
+        name:
+        - mariadb-server
+        - jq
+...
