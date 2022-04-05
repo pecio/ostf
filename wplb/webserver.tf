@@ -4,7 +4,8 @@ data "openstack_images_image_v2" "wsimage" {
 }
 
 resource "openstack_compute_instance_v2" "webserver" {
-  name        = "webserver-${random_pet.suffix.id}"
+  count       = var.webserver_instances
+  name        = "webserver-${count.index}-${random_pet.suffix.id}"
   image_id    = data.openstack_images_image_v2.wsimage.id
   flavor_name = "ds1G"
   key_pair    = "bichejo"
@@ -28,11 +29,13 @@ resource "openstack_compute_instance_v2" "webserver" {
   }
 }
 
-resource "openstack_compute_floatingip_v2" "floatingip1" {
-  pool = "public"
+resource "openstack_networking_floatingip_v2" "webserver" {
+  count = var.webserver_instances
+  pool  = "public"
 }
 
-resource "openstack_compute_floatingip_associate_v2" "fip1" {
-  floating_ip = openstack_compute_floatingip_v2.floatingip1.address
-  instance_id = openstack_compute_instance_v2.webserver.id
+resource "openstack_compute_floatingip_associate_v2" "webserver" {
+  count       = var.webserver_instances
+  floating_ip = openstack_networking_floatingip_v2.webserver[count.index].address
+  instance_id = openstack_compute_instance_v2.webserver[count.index].id
 }
