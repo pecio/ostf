@@ -1,13 +1,3 @@
-terraform {
-  required_version = ">= 1.0.0"
-  required_providers {
-    openstack = {
-      source  = "terraform-provider-openstack/openstack"
-      version = "~> 1.35.0"
-    }
-  }
-}
-
 resource "openstack_compute_instance_v2" "wsimage" {
   name            = "wsimage-${random_pet.suffix.id}"
   image_name      = "wsimage"
