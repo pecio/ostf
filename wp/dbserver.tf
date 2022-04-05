@@ -17,6 +17,8 @@ resource "openstack_compute_instance_v2" "dbserver" {
     name = openstack_networking_network_v2.backend.name
   }
 
+  depends_on = [openstack_networking_subnet_v2.backend]
+
   user_data = file("../scripts/provision-db-vol.sh")
   metadata = {
     db_name = var.database_name

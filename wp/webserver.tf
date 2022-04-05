@@ -17,6 +17,8 @@ resource "openstack_compute_instance_v2" "webserver" {
     name = openstack_networking_network_v2.frontend.name
   }
 
+  depends_on = [openstack_networking_subnet_v2.frontend]
+
   user_data = file("../scripts/provision-ws.sh")
   metadata = {
     db_name = var.database_name
