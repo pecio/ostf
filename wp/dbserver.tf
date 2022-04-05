@@ -4,14 +4,17 @@ data "openstack_images_image_v2" "dbimage" {
 }
 
 resource "openstack_compute_instance_v2" "dbserver" {
-  name            = "dbserver"
-  image_id        = data.openstack_images_image_v2.dbimage.id
-  flavor_name     = "ds1G"
-  key_pair        = "bichejo"
-  security_groups = ["default", "mysql"]
+  name        = "dbserver-${random_pet.suffix.id}"
+  image_id    = data.openstack_images_image_v2.dbimage.id
+  flavor_name = "ds1G"
+  key_pair    = "bichejo"
+  security_groups = [
+    openstack_networking_secgroup_v2.mysql.name,
+    openstack_networking_secgroup_v2.ssh.name
+  ]
 
   network {
-    name = "backend"
+    name = openstack_networking_network_v2.backend.name
   }
 
   user_data = file("../scripts/provision-db-vol.sh")

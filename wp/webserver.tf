@@ -4,14 +4,17 @@ data "openstack_images_image_v2" "wsimage" {
 }
 
 resource "openstack_compute_instance_v2" "webserver" {
-  name            = "webserver"
-  image_id        = data.openstack_images_image_v2.wsimage.id
-  flavor_name     = "ds1G"
-  key_pair        = "bichejo"
-  security_groups = ["default", "webserver"]
+  name        = "webserver-${random_pet.suffix.id}"
+  image_id    = data.openstack_images_image_v2.wsimage.id
+  flavor_name = "ds1G"
+  key_pair    = "bichejo"
+  security_groups = [
+    openstack_networking_secgroup_v2.webserver.name,
+    openstack_networking_secgroup_v2.ssh.name
+  ]
 
   network {
-    name = "frontend"
+    name = openstack_networking_network_v2.frontend.name
   }
 
   user_data = file("../scripts/provision-ws.sh")
