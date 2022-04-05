@@ -1,9 +1,10 @@
 #!/bin/bash
 if [ -e /dev/vdb ]
 then
-    echo STOPPING MARIADB
-    systemctl stop mariadb
+    echo Stopping MariaDB
+    systemctl stop mariadb.service
     echo "/dev/vdb /var/lib/mysql ext4 defaults 0 0" >> /etc/fstab
+    rm -rf /var/lib/mysql/*
     mount /var/lib/mysql
 
     if (( $? != 0 ))   # mount failed
@@ -12,11 +13,14 @@ then
         mount /var/lib/mysql
     fi
 
-    # Fix ownership and SELinux label of /var/lib/mysql
-    chown mysql:mysql /var/lib/mysql/
+    # Fix ownership of /var/lib/mysql
+    chown mysql:mysql /var/lib/mysql
 
-    echo RESTARTING MARIADB
-    systemctl start mariadb
+    echo Recreating database
+    /usr/bin/mysql_install_db --user=mysql --group=mysql --skip-name-resolve --force
+
+    echo Restarting MariaDB
+    systemctl start mariadb.service
 fi
 
 curl -O http://169.254.169.254/openstack/latest/meta_data.json
