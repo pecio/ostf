@@ -17,6 +17,7 @@
           - php-gd
           - php-mysql
           - qemu-guest-agent
+          - jq
         autoclean: yes
         autoremove: yes
 
