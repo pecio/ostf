@@ -26,8 +26,12 @@
         line: 'hosts:          files'
 
     - name: Make MariaDB listen to outside requests
-      lineinfile:
+      ini_file:
         path: /etc/mysql/mariadb.conf.d/50-server.cnf
-        regexp: '^bind-address'
-        line: 'bind-address = 0.0.0.0'
+        option: bind-address
+        section: mysqld
+        value: 0.0.0.0
+
+    - name: Sync buffers
+      shell: 'sync; sleep 1; sync;'
 ...
