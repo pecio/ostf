@@ -13,4 +13,15 @@
         name:
         - mariadb-server
         - jq
+
+    - name: Remove resolv.conf
+      file:
+        path: /etc/resolv.conf
+        state: absent
+
+    - name: Disable DNS lookup
+      lineinfile:
+        path: /etc/nsswitch.conf
+        regexp: '^hosts:'
+        line: 'hosts:          files'
 ...
