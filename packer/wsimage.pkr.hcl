@@ -1,6 +1,6 @@
 source "openstack" "wsimage" {
   image_name                   = "wsimage"
-  flavor                       = "ds1G"
+  flavor                       = "ds512M"
   ssh_username                 = "ubuntu"
   external_source_image_url    = "http://cloud-images.ubuntu.com/minimal/releases/focal/release/ubuntu-20.04-minimal-cloudimg-amd64.img"
   external_source_image_format = "qcow2"
