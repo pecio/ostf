@@ -1,22 +1,21 @@
 #!/bin/bash
 if [ -e /dev/vdb ]
 then
-    echo STOPPING MYSQL
+    echo STOPPING MARIADB
     systemctl stop mariadb
     echo "/dev/vdb /var/lib/mysql ext4 defaults 0 0" >> /etc/fstab
-    mount -a
+    mount /var/lib/mysql
 
     if (( $? != 0 ))   # mount failed
     then
         mkfs -t ext4 /dev/vdb
-        mount -a
+        mount /var/lib/mysql
     fi
 
     # Fix ownership and SELinux label of /var/lib/mysql
     chown mysql:mysql /var/lib/mysql/
-    chcon -t mysqld_db_t /var/lib/mysql/
 
-    echo RESTARTING MYSQL
+    echo RESTARTING MARIADB
     systemctl start mariadb
 fi
 

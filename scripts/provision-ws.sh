@@ -1,7 +1,5 @@
 #!/bin/bash
 
-setsebool httpd_can_network_connect_db on
-
 curl -O http://169.254.169.254/openstack/latest/meta_data.json
 db_name="$(jq -r .meta.db_name meta_data.json)"
 db_user="$(jq -r .meta.db_user meta_data.json)"
