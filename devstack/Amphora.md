@@ -21,8 +21,10 @@ documentation](https://docs.openstack.org/octavia/latest/admin/amphora-image-bui
 Running `/opt/stack/octavia/diskimage-create/diskimage-create.sh`
 without arguments after installing the prerequisites documented in that
 page will generate an `amphora-x64-haproxy.qcow2` file in the current
-directory and you just have to run
+directory and you just have to [run](https://docs.openstack.org/openstack-ansible-os_octavia/latest/configure-octavia.html):
 ```
-openstack image create amphora-x64-haproxy --public --disk-format qcow2 --file amphora-x64-haproxy.qcow2
+openstack image create --disk-format qcow2 \
+   --container-format bare --tag octavia-amphora-image --file amphora-x64-haproxy.qcow2 \
+   --private --project service amphora-x64-haproxy
 ```
 in order to import it in Glance.
