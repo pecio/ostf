@@ -28,14 +28,3 @@ resource "openstack_compute_instance_v2" "webserver" {
     db_addr = openstack_compute_instance_v2.dbserver.network[0].fixed_ip_v4
   }
 }
-
-resource "openstack_networking_floatingip_v2" "webserver" {
-  count = var.webserver_instances
-  pool  = "public"
-}
-
-resource "openstack_compute_floatingip_associate_v2" "webserver" {
-  count       = var.webserver_instances
-  floating_ip = openstack_networking_floatingip_v2.webserver[count.index].address
-  instance_id = openstack_compute_instance_v2.webserver[count.index].id
-}
