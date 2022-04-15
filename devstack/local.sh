@@ -31,7 +31,7 @@ set -o xtrace
     if [[ -n "${description}" ]]; then
       openstack keypair create "${description}" --public-key <(echo "${type} ${key} ${description}")
     fi
-  done
+  done < ~/.ssh/authorized_keys
 }
 # Create "ssh" security group
 {
