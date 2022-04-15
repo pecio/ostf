@@ -1,9 +1,7 @@
-/*
 output "address" {
-  value = openstack_compute_floatingip_v2.floatingip1.address
+  value = openstack_networking_floatingip_v2.frontend.address
 }
 
 output "url" {
-  value = "http://${openstack_compute_floatingip_v2.floatingip1.address}/blog/"
+  value = "http://${openstack_networking_floatingip_v2.frontend.address}/blog/"
 }
-*/
