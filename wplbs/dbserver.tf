@@ -32,7 +32,7 @@ resource "openstack_compute_instance_v2" "dbserver" {
     source_type           = "volume"
     destination_type      = "volume"
     boot_index            = 1
-    delete_on_termination = true
+    delete_on_termination = false
   }
 
   user_data = file("../scripts/provision-db-vol.sh")
