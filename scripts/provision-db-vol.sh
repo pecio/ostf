@@ -28,7 +28,7 @@ db_name="$(jq -r .meta.db_name meta_data.json)"
 db_user="$(jq -r .meta.db_user meta_data.json)"
 db_pass="$(jq -r .meta.db_pass meta_data.json)"
 
-mysqladmin -u root password "${db_pass}"
+mysqladmin -u root -- password "${db_pass}"
 mysqladmin create "${db_name}" -u root -p"${db_pass}"
 mysql -D mysql -u root -p"${db_pass}" -e \
   "GRANT ALL PRIVILEGES ON ${db_name}.* \
