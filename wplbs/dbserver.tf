@@ -48,6 +48,6 @@ data "template_file" "provision_db" {
 }
 
 resource "openstack_blockstorage_volume_v3" "dbvol" {
-  name = "dbvol"
+  name = "dbvol-${random_pet.suffix.id}"
   size = 1
 }
