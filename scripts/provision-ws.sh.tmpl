@@ -1,11 +1,4 @@
 #!/bin/bash
-
-curl -O http://169.254.169.254/openstack/latest/meta_data.json
-db_name="$(jq -r .meta.db_name meta_data.json)"
-db_user="$(jq -r .meta.db_user meta_data.json)"
-db_pass="$(jq -r .meta.db_pass meta_data.json)"
-db_addr="$(jq -r .meta.db_addr meta_data.json)"
-
 cd /var/tmp
 curl https://wordpress.org/latest.tar.gz | tar xzf -
 

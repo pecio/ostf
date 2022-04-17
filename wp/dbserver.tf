@@ -35,8 +35,12 @@ resource "openstack_compute_instance_v2" "dbserver" {
     delete_on_termination = false
   }
 
-  user_data = file("../scripts/provision-db-vol.sh")
-  metadata = {
+  user_data = data.template_file.provision_db.rendered
+}
+
+data "template_file" "provision_db" {
+  template = file("../scripts/provision-db-vol.sh.tmpl")
+  vars = {
     db_name = var.database_name
     db_user = var.database_user
     db_pass = random_password.database_password.result
