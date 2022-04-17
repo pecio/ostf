@@ -19,8 +19,12 @@ resource "openstack_compute_instance_v2" "webserver" {
 
   depends_on = [openstack_networking_subnet_v2.frontend]
 
-  user_data = file("../scripts/provision-ws.sh")
-  metadata = {
+  user_data = data.template_file.provision_ws.rendered
+}
+
+data "template_file" "provision_ws" {
+  template = file("../scripts/provision-ws.sh.tmpl")
+  vars = {
     db_name = var.database_name
     db_user = var.database_user
     db_pass = random_password.database_password.result
