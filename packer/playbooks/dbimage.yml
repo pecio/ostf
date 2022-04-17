@@ -12,7 +12,7 @@
       apt:
         name:
         - mariadb-server
-        - jq
+        - qemu-guest-agent
 
     - name: Remove resolv.conf
       file:
