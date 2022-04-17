@@ -9,6 +9,6 @@ cd /var/www/html/blog
 mv wp-config-sample.php wp-config.php
 sed -i -e "s/database_name_here/${db_name}/" \
   -e "s/username_here/${db_user}/" \
-  -e "s/password_here/${db_pass}/" \
+  -e 's/password_here/${db_pass}/' \
   -e "s/localhost/${db_addr}/" \
   wp-config.php
