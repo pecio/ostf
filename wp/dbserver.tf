@@ -19,6 +19,22 @@ resource "openstack_compute_instance_v2" "dbserver" {
 
   depends_on = [openstack_networking_subnet_v2.backend]
 
+  block_device {
+    uuid                  = data.openstack_images_image_v2.dbimage.id
+    source_type           = "image"
+    destination_type      = "local"
+    boot_index            = 0
+    delete_on_termination = true
+  }
+
+  block_device {
+    uuid                  = openstack_blockstorage_volume_v3.dbvol.id
+    source_type           = "volume"
+    destination_type      = "volume"
+    boot_index            = 1
+    delete_on_termination = false
+  }
+
   user_data = file("../scripts/provision-db-vol.sh")
   metadata = {
     db_name = var.database_name
@@ -30,9 +46,4 @@ resource "openstack_compute_instance_v2" "dbserver" {
 resource "openstack_blockstorage_volume_v3" "dbvol" {
   name = "dbvol"
   size = 1
-}
-
-resource "openstack_compute_volume_attach_v2" "dbattachment" {
-  instance_id = openstack_compute_instance_v2.dbserver.id
-  volume_id   = openstack_blockstorage_volume_v3.dbvol.id
 }
