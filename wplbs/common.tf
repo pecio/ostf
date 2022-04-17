@@ -13,7 +13,8 @@ resource "random_pet" "suffix" {
 }
 
 resource "random_password" "database_password" {
-  length = 16
+  length           = 16
+  override_special = "!@#$%*()-_=+[]{}<>:?" # Removed ampersand
 }
 
 resource "openstack_networking_secgroup_v2" "ssh" {
