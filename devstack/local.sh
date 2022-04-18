@@ -31,20 +31,3 @@ set -o xtrace
       --enable
   fi
 )
-# Import public keys from authorized_keys
-(
-  . ~/devstack/openrc
-  while read type key description; do
-    if [[ -n "${description}" && -z "$(openstack keypair list -f value -c Name | fgrep "${description}")" ]]; then
-      openstack keypair create "${description}" --public-key <(echo "${type} ${key} ${description}")
-    fi
-  done < ~/.ssh/authorized_keys
-)
-# Create "ssh" security group
-(
-  . ~/devstack/openrc
-  if [[ -z "$(openstack security group list -f value -c Name | grep '^ssh$')" ]]; then
-    openstack security group create ssh
-    openstack security group rule create ssh --dst-port 22 --protocol tcp
-  fi
-)
