@@ -31,3 +31,12 @@ set -o xtrace
       --enable
   fi
 )
+# Create "ssh" security group
+(
+  . /devstack/openrc demo demo
+  if [[ -z "$(openstack security group list -f value -c name | grep '^ssh$')" ]]; then
+    openstack security group create --description "SSH access" ssh
+    openstack security group rule create --description "SSH access" \
+      --dst-port 22 --protocol tcp --ingress ssh
+  fi
+)
