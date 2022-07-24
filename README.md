@@ -75,7 +75,7 @@ error. Currently it sets up the environment as follows:
   * Octavia
   * Barbican
   * Manila (not currently used by the Terraform code)
-* Latest Ubuntu 20.04 Minimal image
+* Latest Ubuntu 22.04 Minimal image
 * Latest *as of July 2022* Fedora 36 image (36-1.5)
 
 ## Octavia SSL listener and undeleteable load balancers bug
