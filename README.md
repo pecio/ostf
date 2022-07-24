@@ -36,14 +36,14 @@ in front.
     to work with circa 30 GB of disk. My tests are done with a 250 GB
     disk VM.
   * Ability to do snapshots and revert to them is a must. Have at least
-    a snapshot with the system just installed and configured with the
+    a snapshot with the system just installed with the
     operating system configured but without having run `stack.sh` from
     DevStack.
   * VM is to be set up with a `stack` user with passwordless sudo. This
     is a normal requirement of DevStack.
   * systemd-resolver per-interface configuration bypased
     (`ln -sf /run/systemd/resolve/resolv.conf /etc`). Otherwise DNS
-    starts failing half through DevStack execution catastrophically.
+    starts failing halfway through DevStack execution catastrophically.
 * Internet connectivity
 * Time and patience
 
