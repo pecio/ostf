@@ -1,13 +1,13 @@
 diff --git a/lib/neutron-legacy b/lib/neutron-legacy
-index b906a1b2..51106c32 100644
+index 016df431..f683602f 100644
 --- a/lib/neutron-legacy
 +++ b/lib/neutron-legacy
-@@ -686,7 +686,7 @@ function _move_neutron_addresses_route {
+@@ -689,7 +689,7 @@ function _move_neutron_addresses_route {
              IP_DEL="sudo ip addr del $IP_BRD dev $from_intf"
              IP_REPLACE="sudo ip addr replace $IP_BRD dev $to_intf"
              IP_UP="sudo ip link set $to_intf up"
 -            if [[ "$af" == "inet" ]]; then
-+            if [[ "$af" == "inet" ]] and !is_ubuntu; then
++            if [[ "$af" == "inet" ]] && !is_ubuntu; then
                  IP=$(echo $IP_BRD | awk '{ print $1; exit }' | grep -o -E '(.*)/' | cut -d "/" -f1)
                  ARP_CMD="sudo arping -A -c 3 -w 5 -I $to_intf $IP "
              fi
