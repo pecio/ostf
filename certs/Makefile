@@ -12,11 +12,17 @@ ca.pem: ca.crt
 ca-int.key:
 	openssl genrsa -out ca-int.key 4096
 
-ca-int.csr: ca-int.key ca.crt
+ca-int.csr: ca-int.key
 	openssl req -new -key ca-int.key -out ca-int.csr -subj '/CN=Intermediate CA' -extensions v3_ca
 
-ca-int.pem: ca-int.csr ca.crt ca.key
-	openssl x509 -req -days 3650 -in ca-int.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out ca-int.pem
+ca.db:
+	touch ca.db
+
+ca.srl:
+	openssl rand -hex 20 > ca.srl
+
+ca-int.pem: ca-int.csr ca.pem ca.key ca.db ca.srl
+	openssl ca -config ca.conf -batch -in ca-int.csr -out ca-int.pem
 
 server.key: ca-int.csr
 	openssl genrsa -out server.key 4096
@@ -24,10 +30,16 @@ server.key: ca-int.csr
 server.csr: server.key
 	openssl req -new -key server.key -out server.csr -subj '/CN=wordpress.local'
 
-server.pem: server.csr ca-int.pem ca-int.key
-	openssl x509 -req -days 3650 -in server.csr  -CA ca-int.pem -CAkey ca-int.key -CAcreateserial -out server.pem
+ca-int.db:
+	touch ca-int.db
+
+ca-int.srl:
+	openssl rand -hex 20 > ca-int.srl
+
+server.pem: server.csr ca-int.pem ca-int.key ca-int.db ca-int.srl
+	openssl ca -config ca.conf -name intermediate_ca -batch -in server.csr -out server.pem
 
 .PHONY: all clean
 
 clean:
-	rm -f *.crt *.csr *.key *.pem *.srl
+	rm -f *.crt *.csr *.key *.pem *.srl *.old *.db*

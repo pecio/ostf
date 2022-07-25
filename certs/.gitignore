@@ -3,3 +3,5 @@
 *.key
 *.pem
 *.srl
+*.old
+*.db*
