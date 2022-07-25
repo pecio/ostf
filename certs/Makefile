@@ -8,7 +8,7 @@ ca.key:
 ca.crt: ca.key
 	echo "Root CA Certificate"
 	echo "###################"
-	openssl req -new -x509 -days 3650 -key ca.key -out ca.crt -subj '/CN=Root CA'
+	openssl req -new -x509 -days 3650 -key ca.key -out ca.crt -subj '/CN=Root CA' -extensions v3_ca
 
 ca.pem: ca.crt
 	echo "Root CA x509 Certificate"
@@ -23,12 +23,12 @@ ca-int.key:
 ca-int.csr: ca-int.key ca.crt
 	echo "Intermediate CA Certificate Request"
 	echo "###################################"
-	openssl req -new -key ca-int.key -out ca-int.csr -subj '/CN=Intermediate CA'
+	openssl req -new -key ca-int.key -out ca-int.csr -subj '/CN=Intermediate CA' -extensions v3_ca
 
 ca-int.pem: ca-int.csr ca.crt ca.key
 	echo "Intermediate CA x509 Certificate"
 	echo "################################"
-	openssl x509 -req -days 3650 -in ca-int.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out ca-int.pem
+	openssl x509 -req -days 3650 -in ca-int.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out ca-int.pem
 
 server.key: ca-int.csr
 	echo "Server key"
@@ -43,9 +43,9 @@ server.csr: server.key
 server.pem: server.csr ca-int.pem ca-int.key
 	echo "Server x509 Certificate"
 	echo "#######################"
-	openssl x509 -req -days 3650 -in server.csr  -CA ca-int.pem -CAkey ca-int.key -set_serial 01 -out server.pem
+	openssl x509 -req -days 3650 -in server.csr  -CA ca-int.pem -CAkey ca-int.key -CAcreateserial -out server.pem
 
 .PHONY: all clean
 
 clean:
-	rm -f *.crt *.csr *.key *.pem
+	rm -f *.crt *.csr *.key *.pem *.srl
