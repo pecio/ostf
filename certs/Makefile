@@ -22,7 +22,7 @@ ca.srl:
 	openssl rand -hex 20 > ca.srl
 
 ca-int.pem: ca-int.csr ca.pem ca.key ca.db ca.srl
-	openssl ca -config ca.conf -batch -in ca-int.csr -out ca-int.pem
+	openssl ca -config ca.conf -batch -notext -in ca-int.csr -out ca-int.pem
 
 server.key: ca-int.csr
 	openssl genrsa -out server.key 4096
@@ -37,7 +37,7 @@ ca-int.srl:
 	openssl rand -hex 20 > ca-int.srl
 
 server.pem: server.csr ca-int.pem ca-int.key ca-int.db ca-int.srl
-	openssl ca -config ca.conf -name intermediate_ca -batch -in server.csr -out server.pem
+	openssl ca -config ca.conf -name intermediate_ca -batch -notext -in server.csr -out server.pem
 
 .PHONY: all clean
 
