@@ -1,4 +1,4 @@
-all: server.pem server.key ca-int.pem
+all: server.pfx
 
 ca.key:
 	openssl genrsa -out ca.key 4096
@@ -38,6 +38,12 @@ ca-int.srl:
 
 server.pem: server.csr ca-int.pem ca-int.key ca-int.db ca-int.srl
 	openssl ca -config ca.conf -name intermediate_ca -batch -notext -in server.csr -out server.pem
+
+chain.pem: ca-int.pem ca.pem
+	cat ca-int.pem ca.pem > chain.pem
+
+server.pfx: server.pem server.key chain.pem
+	openssl pkcs12 -export -nodes -out server.pfx -inkey server.key -in server.pem -certfile chain.pem
 
 .PHONY: all clean
 
