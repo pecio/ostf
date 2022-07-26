@@ -9,7 +9,8 @@ resource "openstack_keymanager_secret_v1" "private_key" {
   name                 = "private_key-${random_pet.suffix.id}"
   payload_content_type = "text/plain"
   payload              = file("../certs/server.key")
-  secret_type          = "certificate"
+  secret_type          = "private"
+  algorithm            = "RSA"
 }
 
 resource "openstack_keymanager_secret_v1" "intermediate" {
