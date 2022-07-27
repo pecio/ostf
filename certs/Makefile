@@ -28,7 +28,7 @@ server.key: ca-int.csr
 	openssl genrsa -out server.key 4096
 
 server.csr: server.key
-	openssl req -new -key server.key -out server.csr -subj '/CN=wordpress.local'
+	openssl req -new -key server.key -out server.csr -subj '/CN=wordpress.local' -addext 'subjectAltName=DNS:blog.local,DNS:wordpress.local'
 
 ca-int.db:
 	touch ca-int.db
