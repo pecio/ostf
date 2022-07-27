@@ -43,7 +43,7 @@ chain.pem: ca-int.pem ca.pem
 	cat ca-int.pem ca.pem > chain.pem
 
 server.pfx: server.pem server.key chain.pem
-	openssl pkcs12 -export -nodes -out server.pfx -inkey server.key -in server.pem -certfile chain.pem
+	openssl pkcs12 -export -nodes -passout pass:'' -out server.pfx -inkey server.key -in server.pem -certfile chain.pem
 
 .PHONY: all clean
 
