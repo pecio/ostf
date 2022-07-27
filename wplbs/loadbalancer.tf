@@ -4,15 +4,17 @@ resource "openstack_lb_loadbalancer_v2" "frontend" {
 }
 
 resource "openstack_lb_listener_v2" "http" {
+  name            = "http-${random_pet.suffix.id}"
   protocol        = "HTTP"
   protocol_port   = 80
   loadbalancer_id = openstack_lb_loadbalancer_v2.frontend.id
+  default_pool_id = openstack_lb_pool_v2.webservers.id
 }
 
 resource "openstack_lb_pool_v2" "webservers" {
-  protocol    = "HTTP"
-  lb_method   = "ROUND_ROBIN"
-  listener_id = openstack_lb_listener_v2.http.id
+  protocol        = "HTTP"
+  lb_method       = "ROUND_ROBIN"
+  loadbalancer_id = openstack_lb_loadbalancer_v2.frontend.id
 }
 
 resource "openstack_lb_member_v2" "webserver" {

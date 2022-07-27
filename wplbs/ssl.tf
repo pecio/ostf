@@ -53,4 +53,5 @@ resource "openstack_lb_listener_v2" "ssl_listener" {
   protocol_port             = 443
   loadbalancer_id           = openstack_lb_loadbalancer_v2.frontend.id
   default_tls_container_ref = openstack_keymanager_container_v1.server.container_ref
+  default_pool_id           = openstack_lb_pool_v2.webservers.id
 }
