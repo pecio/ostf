@@ -9,41 +9,23 @@ ca.crt: ca.key
 ca.pem: ca.crt
 	openssl x509 -in ca.crt -out ca.pem
 
-ca-int.key:
-	openssl genrsa -out ca-int.key 4096
-
-ca-int.csr: ca-int.key
-	openssl req -new -key ca-int.key -out ca-int.csr -subj '/CN=Intermediate CA' -extensions v3_ca
-
 ca.db:
 	touch ca.db
 
 ca.srl:
 	openssl rand -hex 20 > ca.srl
 
-ca-int.pem: ca-int.csr ca.pem ca.key ca.db ca.srl
-	openssl ca -config ca.conf -batch -notext -in ca-int.csr -out ca-int.pem
-
-server.key: ca-int.csr
+server.key:
 	openssl genrsa -out server.key 4096
 
 server.csr: server.key
 	openssl req -new -key server.key -out server.csr -subj '/CN=wordpress.local' -addext 'subjectAltName=DNS:blog.local,DNS:wordpress.local'
 
-ca-int.db:
-	touch ca-int.db
+server.pem: server.csr ca.pem ca.key ca.db ca.srl
+	openssl ca -config ca.conf -batch -notext -in server.csr -out server.pem
 
-ca-int.srl:
-	openssl rand -hex 20 > ca-int.srl
-
-server.pem: server.csr ca-int.pem ca-int.key ca-int.db ca-int.srl
-	openssl ca -config ca.conf -name intermediate_ca -batch -notext -in server.csr -out server.pem
-
-chain.pem: ca-int.pem ca.pem
-	cat ca-int.pem ca.pem > chain.pem
-
-server.pfx: server.pem server.key chain.pem
-	openssl pkcs12 -export -nodes -passout pass:'' -out server.pfx -inkey server.key -in server.pem -certfile chain.pem
+server.pfx: server.pem server.key ca.pem
+	openssl pkcs12 -export -nodes -passout pass:'' -out server.pfx -inkey server.key -in server.pem -certfile ca.pem
 
 .PHONY: all clean
 
