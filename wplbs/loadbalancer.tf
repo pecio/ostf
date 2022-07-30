@@ -15,11 +15,13 @@ resource "openstack_lb_pool_v2" "webservers" {
   protocol        = "HTTP"
   lb_method       = "ROUND_ROBIN"
   loadbalancer_id = openstack_lb_loadbalancer_v2.frontend.id
+  name            = "webpool-${random_pet.suffix.id}"
 }
 
 resource "openstack_lb_member_v2" "webserver" {
   count         = var.webserver_instances
   pool_id       = openstack_lb_pool_v2.webservers.id
+  name          = "webserver-${count.index}-${random_pet.suffix.id}"
   address       = openstack_compute_instance_v2.webserver[count.index].network[0].fixed_ip_v4
   protocol_port = 80
 }
