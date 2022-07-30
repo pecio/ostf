@@ -3,7 +3,6 @@ resource "openstack_keymanager_secret_v1" "pfx" {
   payload_content_type     = "application/octet-stream"
   payload                  = filebase64("../certs/server.pfx")
   payload_content_encoding = "base64"
-  secret_type              = "certificate"
 }
 
 resource "openstack_lb_listener_v2" "ssl_listener" {
