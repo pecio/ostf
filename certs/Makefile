@@ -15,19 +15,21 @@ ca.db:
 ca.srl:
 	openssl rand -hex 20 > ca.srl
 
-server.key:
-	openssl genrsa -out server.key 4096
+server.csr:
+	openssl req -new -out server.csr -subj '/CN=wordpress.local' -addext 'subjectAltName=DNS:blog.local,DNS:wordpress.local' -newkey rsa:4096 -nodes -keyout server.key
 
-server.csr: server.key
-	openssl req -new -key server.key -out server.csr -subj '/CN=wordpress.local' -addext 'subjectAltName=DNS:blog.local,DNS:wordpress.local'
+server.key: server.csr
 
 server.pem: server.csr ca.pem ca.key ca.db ca.srl
 	openssl ca -config ca.conf -batch -notext -in server.csr -out server.pem
 
-server.pfx: server.pem server.key ca.pem
-	openssl pkcs12 -export -nodes -passout pass:'' -out server.pfx -inkey server.key -in server.pem -certfile ca.pem
+empty.txt:
+	echo > empty.txt
+
+server.pfx: server.pem server.key ca.pem empty.txt
+	openssl pkcs12 -export -out server.pfx -inkey server.key -in server.pem -certfile ca.pem -name wordpress.local -passout file:empty.txt
 
 .PHONY: all clean
 
 clean:
-	rm -f *.crt *.csr *.key *.pem *.srl *.old *.db* *.pfx
+	rm -f *.crt *.csr *.key *.pem *.srl *.old *.db* *.pfx empty.txt
