@@ -30,4 +30,4 @@ server.pfx: server.pem server.key ca.pem
 .PHONY: all clean
 
 clean:
-	rm -f *.crt *.csr *.key *.pem *.srl *.old *.db*
+	rm -f *.crt *.csr *.key *.pem *.srl *.old *.db* *.pfx
