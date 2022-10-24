@@ -1,51 +1,35 @@
-all: server.pem server.key ca-int.pem
+all: server.pfx
 
 ca.key:
-	echo "Root CA Key"
-	echo "###########"
 	openssl genrsa -out ca.key 4096
 
 ca.crt: ca.key
-	echo "Root CA Certificate"
-	echo "###################"
-	openssl req -new -x509 -days 3650 -key ca.key -out ca.crt -subj '/CN=Root CA'
+	openssl req -new -x509 -days 3650 -key ca.key -out ca.crt -subj '/CN=Root CA' -extensions v3_ca
 
 ca.pem: ca.crt
-	echo "Root CA x509 Certificate"
-	echo "########################"
 	openssl x509 -in ca.crt -out ca.pem
 
-ca-int.key:
-	echo "Intermediate CA Key"
-	echo "###################"
-	openssl genrsa -out ca-int.key 4096
+ca.db:
+	touch ca.db
 
-ca-int.csr: ca-int.key ca.crt
-	echo "Intermediate CA Certificate Request"
-	echo "###################################"
-	openssl req -new -key ca-int.key -out ca-int.csr -subj '/CN=Intermediate CA'
+ca.srl:
+	openssl rand -hex 20 > ca.srl
 
-ca-int.pem: ca-int.csr ca.crt ca.key
-	echo "Intermediate CA x509 Certificate"
-	echo "################################"
-	openssl x509 -req -days 3650 -in ca-int.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out ca-int.pem
+server.csr:
+	openssl req -new -out server.csr -subj '/CN=wordpress.local' -addext 'subjectAltName=DNS:blog.local,DNS:wordpress.local' -newkey rsa:4096 -nodes -keyout server.key
 
-server.key: ca-int.csr
-	echo "Server key"
-	echo "##########"
-	openssl genrsa -out server.key 4096
+server.key: server.csr
 
-server.csr: server.key
-	echo "Server Certificate Request"
-	echo "##########################"
-	openssl req -new -key server.key -out server.csr -subj '/CN=wordpress.local'
+server.pem: server.csr ca.pem ca.key ca.db ca.srl
+	openssl ca -config ca.conf -batch -notext -in server.csr -out server.pem
 
-server.pem: server.csr ca-int.pem ca-int.key
-	echo "Server x509 Certificate"
-	echo "#######################"
-	openssl x509 -req -days 3650 -in server.csr  -CA ca-int.pem -CAkey ca-int.key -set_serial 01 -out server.pem
+empty.txt:
+	echo > empty.txt
+
+server.pfx: server.pem server.key ca.pem empty.txt
+	openssl pkcs12 -export -out server.pfx -inkey server.key -in server.pem -certfile ca.pem -name wordpress.local -passout file:empty.txt
 
 .PHONY: all clean
 
 clean:
-	rm -f *.crt *.csr *.key *.pem
+	rm -f *.crt *.csr *.key *.pem *.srl *.old *.db* *.pfx empty.txt

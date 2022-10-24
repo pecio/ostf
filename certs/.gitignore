@@ -2,3 +2,8 @@
 *.csr
 *.key
 *.pem
+*.srl
+*.old
+*.db*
+*.pfx
+empty.txt
