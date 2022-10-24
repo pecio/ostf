@@ -12,3 +12,13 @@ sed -i -e "s/database_name_here/${db_name}/" \
   -e 's/password_here/${db_pass}/' \
   -e "s/localhost/${db_addr}/" \
   wp-config.php
+
+%{if use_ssl == 1}
+sed -i -e "/Add any custom values/a define('FORCE_SSL_LOGIN', true);\ndefine('FORCE_SSL_ADMIN', true);" wp-config.php
+cat > .htaccess <<EOF
+RewriteEngine On
+RewriteCond %%{HTTP:X-Forwarded-Proto} !https
+RewriteCond %%{HTTPS} off
+RewriteRule (.*) https://%%{HTTP_HOST}%%{REQUEST_URI} [R=301,L]
+EOF
+%{endif}
