@@ -29,6 +29,7 @@ data "template_file" "provision_ws" {
     db_user = var.database_user
     db_pass = random_password.database_password.result
     db_addr = openstack_compute_instance_v2.dbserver.network[0].fixed_ip_v4
+    use_ssl = false
   }
 }
 
