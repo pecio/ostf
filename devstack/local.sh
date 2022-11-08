@@ -7,7 +7,10 @@ set -o xtrace
   if [[ -z "$(openstack image list -f value -c Name | fgrep amphora-x64-haproxy)" ]]; then
     WORKDIR=$(/usr/bin/mktemp -d)
     cd "${WORKDIR}"
-    /usr/bin/sudo /opt/stack/octavia/diskimage-create/diskimage-create.sh
+    /usr/bin/python3 -mvenv octavia-diskimage-venv
+    . ./octavia-diskimage-venv/bin/activate
+    pip install -r /opt/stack/octavia/diskimage-create/requirements.txt
+    /opt/stack/octavia/diskimage-create/diskimage-create.sh
     openstack image create --disk-format qcow2 \
       --container-format bare --tag amphora --file amphora-x64-haproxy.qcow2 \
       --private --project service amphora-x64-haproxy
