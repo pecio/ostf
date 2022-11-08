@@ -43,5 +43,3 @@ fi
   . ~/devstack/openrc admin demo
   openstack role add --project demo --user demo creator
 )
-# Fix warning on openstack command invocation
-/usr/bin/sudo /usr/bin/pip install -U secretstorage
