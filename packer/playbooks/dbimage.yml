@@ -13,17 +13,13 @@
         name:
         - mariadb-server
         - qemu-guest-agent
+        - libnss-myhostname
 
-    - name: Remove resolv.conf
-      file:
-        path: /etc/resolv.conf
-        state: absent
-
-    - name: Disable DNS lookup
+    - name: Disable DNS lookup and enable own hostname lookup
       lineinfile:
         path: /etc/nsswitch.conf
         regexp: '^hosts:'
-        line: 'hosts:          files'
+        line: 'hosts:          files myhostname'
 
     - name: Make MariaDB listen to outside requests
       ini_file:
