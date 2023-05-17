@@ -1,8 +1,8 @@
-diff --git a/lib/neutron-legacy b/lib/neutron-legacy
-index 016df431..f683602f 100644
---- a/lib/neutron-legacy
-+++ b/lib/neutron-legacy
-@@ -689,7 +689,7 @@ function _move_neutron_addresses_route {
+diff --git a/lib/neutron b/lib/neutron
+index 8708bf43..e3fe7b05 100644
+--- a/lib/neutron
++++ b/lib/neutron
+@@ -747,7 +747,7 @@ function _move_neutron_addresses_route {
              IP_DEL="sudo ip addr del $IP_BRD dev $from_intf"
              IP_REPLACE="sudo ip addr replace $IP_BRD dev $to_intf"
              IP_UP="sudo ip link set $to_intf up"
