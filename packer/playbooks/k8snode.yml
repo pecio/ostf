@@ -1,0 +1,139 @@
+---
+- name: K8s Prerrequisites
+  hosts: all
+  become: False
+  vars:
+    version: 1.28
+  tasks:
+    - name: Setup module loading
+      become: True
+      community.general.modprobe:
+        name: '{{item}}'
+        state: present
+        persistent: present
+      loop:
+        - overlay
+        - br_netfilter
+
+    - name: Setup IP forwarding
+      become: True
+      ansible.posix.sysctl:
+        name: '{{ item }}'
+        value: "1"
+        sysctl_set: True
+        state: present
+        reload: True
+      loop:
+        - net.bridge.bridge-nf-call-iptables
+        - net.bridge.bridge-nf-call-ip6tables
+        - net.ipv4.ip_forward
+
+    - name: Temporary file for keyrings
+      run_once: True
+      delegate_to: localhost
+      ansible.builtin.tempfile:
+        state: file
+      register: tempfile
+
+    - name: Download libcontainers keyring
+      run_once: True
+      delegate_to: localhost
+      ansible.builtin.get_url:
+        url: https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_22.04/Release.key
+        dest: '{{ tempfile.path }}'
+
+    - name: Dearmor and install libcontainers keyring
+      become: True
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/gpg
+          - --dearmor
+          - -o
+          - /etc/apt/trusted.gpg.d/libcontainers-archive-keyring.gpg
+        stdin: '{{ lookup("file", tempfile.path) }}'
+
+    - name: Download CRI-O keyring
+      run_once: True
+      delegate_to: localhost
+      ansible.builtin.get_url:
+        url: 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ version }}/xUbuntu_22.04/Release.key'
+        dest: '{{ tempfile.path }}'
+        force: True
+
+    - name: Dearmor and install CRI-O keyring
+      become: True
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/gpg
+          - --dearmor
+          - -o
+          - /etc/apt/trusted.gpg.d/libcontainers-crio-archive-keyring.gpg
+        stdin: '{{ lookup("file", tempfile.path) }}'
+
+    - name: Download K8s keyring
+      run_once: True
+      delegate_to: localhost
+      ansible.builtin.get_url:
+        url: 'https://pkgs.k8s.io/core:/stable:/v{{ version }}/deb/Release.key'
+        dest: '{{ tempfile.path }}'
+        force: True
+
+    - name: Dearmor and install K8s keyring
+      become: True
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/gpg
+          - --dearmor
+          - -o
+          - /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg
+        stdin: '{{ lookup("file", tempfile.path) }}'
+
+    - name: Cleanup temporary file
+      run_once: True
+      delegate_to: localhost
+      ansible.builtin.file:
+        path: '{{ tempfile.path }}'
+        state: absent
+
+    - name: Install python3-apt
+      become: True
+      ansible.builtin.apt:
+        name: python3-apt
+        update_cache: yes
+
+    - name: Setup CRI-O and K8s repositories
+      become: True
+      ansible.builtin.apt_repository:
+        filename: '{{ item.name }}'
+        repo: '{{ item.repo }}'
+        install_python_apt: False
+        update_cache: False
+      loop:
+        - name: devel:kubic:libcontainers:stable
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_22.04/ /"
+        - name: devel:kubic:libcontainers:stable:cri-o:{{ version }}
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ version }}/xUbuntu_22.04/ /"
+        - name: kubernetes
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ version }}/deb/ /"
+      loop_control:
+        label: '{{ item.name }}'
+
+    - name: Install Packages
+      become: True
+      ansible.builtin.apt:
+        name:
+          - cri-o
+          - cri-o-runc
+          - kubelet
+          - kubeadm
+          - kubectl
+        update_cache: yes
+
+    - name: Enable CRI-O
+      become: True
+      ansible.builtin.systemd_service:
+        name: crio.service
+        enabled: True
+
+    - name: Sync buffers
+      ansible.builtin.shell: 'sync; sleep 1; sync'
