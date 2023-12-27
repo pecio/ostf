@@ -1,0 +1,18 @@
+---
+- name: Install Docker CE in Ubuntu
+  hosts: all
+  become: True
+  pre_tasks:
+    - name: Update Apt cache
+      ansible.builtin.apt:
+        update_cache: True
+  roles:
+    - name: geerlingguy.pip
+      pip_install_packages:
+        - name: docker
+    - name: geerlingguy.docker
+      docker_users:
+        - ubuntu
+  tasks:
+    - name: Sync buffers
+      ansible.builtin.shell: 'sync; sleep 1; sync'
