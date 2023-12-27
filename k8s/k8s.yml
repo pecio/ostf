@@ -1,0 +1,217 @@
+---
+- name: Prerrequisites
+  hosts: k8s
+  become: False
+  vars:
+    pod_network_cidr: 10.80.0.0/12
+    version: 1.28
+    tigera_version: v3.27.0
+  tasks:
+    - name: Setup module loading
+      become: True
+      community.general.modprobe:
+        name: '{{item}}'
+        state: present
+        persistent: present
+      loop:
+        - overlay
+        - br_netfilter
+
+    - name: Setup IP forwarding
+      become: True
+      ansible.posix.sysctl:
+        name: '{{ item }}'
+        value: "1"
+        sysctl_set: True
+        state: present
+        reload: True
+      loop:
+        - net.bridge.bridge-nf-call-iptables
+        - net.bridge.bridge-nf-call-ip6tables
+        - net.ipv4.ip_forward
+
+    - name: Temporary file for libcontainers keyring
+      run_once: True
+      delegate_to: localhost
+      ansible.builtin.tempfile:
+        state: file
+      register: tempfile
+
+    - name: Download libcontainers keyring
+      run_once: True
+      delegate_to: localhost
+      ansible.builtin.get_url:
+        url: https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_22.04/Release.key
+        dest: '{{ tempfile.path }}'
+      register: armored
+
+    - name: Dearmor libcontainers keyring
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/gpg
+          - --dearmor
+        stdin: '{{ lookup("file", tempfile.path) }}'
+      register: dearmored
+      changed_when: False
+
+    - name: Install libcontainers keyring
+      become: True
+      ansible.builtin.copy:
+        dest: /etc/apt/trusted.gpg.d/libcontainers-archive-keyring.gpg
+        mode: '0644'
+        content: '{{ dearmored.stdout }}'
+
+    - name: Download CRI-O keyring
+      ansible.builtin.uri:
+        url: 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ version }}/xUbuntu_22.04/Release.key'
+        return_content: True
+      register: armored
+
+    - name: Dearmor CRI-O keyring
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/gpg
+          - --dearmor
+        stdin: '{{ armored.content }}'
+      register: dearmored
+      changed_when: False
+
+    - name: Install CRI-O keyring
+      become: True
+      ansible.builtin.copy:
+        dest: /etc/apt/trusted.gpg.d/libcontainers-crio-archive-keyring.gpg
+        mode: '0644'
+        content: '{{ dearmored.stdout }}'
+
+    - name: Download K8s keyring
+      ansible.builtin.uri:
+        url: 'https://pkgs.k8s.io/core:/stable:/v{{ version }}/deb/Release.key'
+        return_content: True
+      register: armored
+
+    - name: Dearmor K8s keyring
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/gpg
+          - --dearmor
+        stdin: '{{ armored.content }}'
+      register: dearmored
+      changed_when: False
+
+    - name: Install K8s keyring
+      become: True
+      ansible.builtin.copy:
+        dest: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg
+        mode: '0644'
+        content: '{{ dearmored.stdout }}'
+
+    - name: Install python3-apt
+      become: True
+      ansible.builtin.apt:
+        name: python3-apt
+        update_cache: yes
+
+    - name: Setup CRI-O and K8s repositories
+      become: True
+      ansible.builtin.apt_repository:
+        filename: '{{ item.name }}'
+        repo: '{{ item.repo }}'
+        install_python_apt: False
+        update_cache: False
+      loop:
+        - name: devel:kubic:libcontainers:stable
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_22.04/ /"
+        - name: devel:kubic:libcontainers:stable:cri-o:{{ version }}
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ version }}/xUbuntu_22.04/ /"
+        - name: kubernetes
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ version }}/deb/ /"
+      loop_control:
+        label: '{{ item.name }}'
+
+    - name: Install Packages
+      become: True
+      ansible.builtin.apt:
+        name:
+          - cri-o
+          - cri-o-runc
+          - kubelet
+          - kubeadm
+          - kubectl
+        update_cache: yes
+
+    - name: Enable CRI-O
+      become: True
+      ansible.builtin.systemd_service:
+        name: crio.service
+        state: started
+        enabled: True
+
+    - name: Init cluster
+      run_once: True
+      block:
+        - name: Init cluster
+          become: True
+          ansible.builtin.command:
+            argv:
+              - /usr/bin/kubeadm
+              - init
+              - '--pod-network-cidr={{ pod_network_cidr }}'
+            creates: /etc/kubernetes/kubelet.conf
+          register: kubeadm_init
+
+        - name: Create kubectl directory
+          ansible.builtin.file:
+            path: /home/ubuntu/.kube
+            state: directory
+            mode: '0700'
+
+        - name: Setup kubectl
+          become: True
+          ansible.builtin.copy:
+            remote_src: True
+            src: /etc/kubernetes/admin.conf
+            dest: /home/ubuntu/.kube/config
+            mode: '0600'
+            owner: ubuntu
+            group: ubuntu
+
+        - name: Install python3-kubernetes
+          become: True
+          ansible.builtin.apt:
+            name: python3-kubernetes
+            state: present
+
+        - name: Download Tigera operator YAML
+          ansible.builtin.get_url:
+            url: 'https://raw.githubusercontent.com/projectcalico/calico/{{ tigera_version }}/manifests/tigera-operator.yaml'
+            dest: /tmp/tigera-operator.yaml
+
+        - name: Install Tigera operator
+          kubernetes.core.k8s:
+            state: present
+            src: /tmp/tigera-operator.yaml
+
+        - name: Download Calico Custom Resources
+          ansible.builtin.get_url:
+            url: 'https://raw.githubusercontent.com/projectcalico/calico/{{ tigera_version }}/manifests/custom-resources.yaml'
+            dest: /tmp/custom-resources.yaml
+
+        - name: Set pod CIDR in Calico Custom Resources
+          ansible.builtin.lineinfile:
+            path: /tmp/custom-resources.yaml
+            line: '      cidr: {{ pod_network_cidr }}'
+            regexp: 'cidr: '
+            state: present
+
+        - name: Install Calico
+          kubernetes.core.k8s:
+            state: present
+            src: /tmp/custom-resources.yaml
+
+    - name: Join other nodes
+      become: True
+      ansible.builtin.shell:
+        cmd: |
+          {{ kubeadm_init.stdout_lines[-2] }}
+          {{ kubeadm_init.stdout_lines[-1] }}
+        creates: /etc/kubernetes/kubelet.conf
