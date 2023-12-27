@@ -15,13 +15,10 @@
           - libapache2-mod-php
           - php
           - php-gd
-          - php-mysql
+          - php-mysqli
           - qemu-guest-agent
         autoclean: yes
         autoremove: yes
 
-    - name: Clean apt cache
-      command: /usr/bin/apt-get clean
-      args:
-        warn: false
-...
+    - name: Sync buffers
+      shell: 'sync; sleep 1; sync;'

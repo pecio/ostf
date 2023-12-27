@@ -20,16 +20,19 @@ resource "openstack_compute_instance_v2" "webserver" {
 
   depends_on = [openstack_networking_subnet_v2.frontend]
 
-  user_data = data.template_file.provision_ws.rendered
+  user_data = data.cloudinit_config.provision_ws.rendered
 }
 
-data "template_file" "provision_ws" {
-  template = file("../scripts/provision-ws.sh.tmpl")
-  vars = {
-    db_name = var.database_name
-    db_user = var.database_user
-    db_pass = random_password.database_password.result
-    db_addr = openstack_compute_instance_v2.dbserver.network[0].fixed_ip_v4
-    use_ssl = 1
+data "cloudinit_config" "provision_ws" {
+  part {
+    filename     = "provision-ws.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("../scripts/provision-ws.sh.tmpl", {
+      db_name = var.database_name
+      db_user = var.database_user
+      db_pass = random_password.database_password.result
+      db_addr = openstack_compute_instance_v2.dbserver.network[0].fixed_ip_v4
+      use_ssl = 1
+    })
   }
 }
