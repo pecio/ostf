@@ -41,33 +41,6 @@
             name: python3-kubernetes
             state: present
 
-        - name: Download Tigera operator YAML
-          ansible.builtin.get_url:
-            url: 'https://raw.githubusercontent.com/projectcalico/calico/{{ tigera_version }}/manifests/tigera-operator.yaml'
-            dest: /tmp/tigera-operator.yaml
-
-        - name: Install Tigera operator
-          kubernetes.core.k8s:
-            state: present
-            src: /tmp/tigera-operator.yaml
-
-        - name: Download Calico Custom Resources
-          ansible.builtin.get_url:
-            url: 'https://raw.githubusercontent.com/projectcalico/calico/{{ tigera_version }}/manifests/custom-resources.yaml'
-            dest: /tmp/custom-resources.yaml
-
-        - name: Set pod CIDR in Calico Custom Resources
-          ansible.builtin.lineinfile:
-            path: /tmp/custom-resources.yaml
-            line: '      cidr: {{ pod_network_cidr }}'
-            regexp: 'cidr: '
-            state: present
-
-        - name: Install Calico
-          kubernetes.core.k8s:
-            state: present
-            src: /tmp/custom-resources.yaml
-
     - name: Join other nodes
       become: True
       ansible.builtin.shell:
