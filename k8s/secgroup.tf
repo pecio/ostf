@@ -18,15 +18,35 @@ resource "openstack_networking_secgroup_v2" "k8s" {
 }
 
 resource "openstack_networking_secgroup_rule_v2" "k8s" {
-  direction = "ingress"
-  ethertype = "IPv4"
+  direction         = "ingress"
+  ethertype         = "IPv4"
   remote_group_id   = openstack_networking_secgroup_v2.k8s.id
   security_group_id = openstack_networking_secgroup_v2.k8s.id
 }
 
 resource "openstack_networking_secgroup_rule_v2" "k8s_ipv6" {
-  direction = "ingress"
-  ethertype = "IPv6"
+  direction         = "ingress"
+  ethertype         = "IPv6"
   remote_group_id   = openstack_networking_secgroup_v2.k8s.id
   security_group_id = openstack_networking_secgroup_v2.k8s.id
+}
+
+resource "openstack_networking_secgroup_v2" "harbor" {
+  name        = "harbor-${random_pet.suffix.id}"
+  description = "Allow harbor ports"
+}
+
+resource "openstack_networking_secgroup_rule_v2" "harbor" {
+  for_each = {
+    http  = 80
+    https = 443
+    trust = 4443
+  }
+
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = each.value
+  port_range_max    = each.value
+  security_group_id = openstack_networking_secgroup_v2.harbor.id
 }

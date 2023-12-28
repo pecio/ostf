@@ -1,0 +1,131 @@
+---
+- name: Install Harbor
+  hosts: harbor
+  become: False
+  tasks:
+    - name: Setup /etc/hosts
+      become: True
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: '{{ ansible_default_ipv4.address }} harbor'
+
+    - name: Setup target directory
+      become: True
+      ansible.builtin.file:
+        path: /data
+        state: directory
+        owner: root
+        group: root
+        mode: '0750'
+
+    - name: Download Harbor installer
+      ansible.builtin.get_url:
+        url: https://github.com/goharbor/harbor/releases/download/v2.10.0/harbor-online-installer-v2.10.0.tgz
+        dest: /tmp/harbor-online-installer.tar.gz
+
+    - name: Unpack Harbor installer
+      ansible.builtin.unarchive:
+        dest: /home/ubuntu
+        remote_src: True
+        src: /tmp/harbor-online-installer.tar.gz
+        creates: /home/ubuntu/harbor/install.sh
+
+    - name: Create certificates directory
+      become: True
+      ansible.builtin.file:
+        path: /etc/pki
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Generate self signed certificate
+      become: True
+      ansible.builtin.shell:
+        chdir: /etc/pki
+        cmd: |
+          openssl genrsa -out ca.key 4096
+          openssl req -x509 -new -nodes -sha512 -days 3650 -subj '/CN=Root CA' -key ca.key -out ca.crt
+          openssl genrsa -out harbor.key 4096
+          openssl req -sha512 -new -subj '/CN=harbor' -addext 'subjectAltName=DNS:harbor,IP:{{ ansible_host }},IP:{{ ansible_default_ipv4.address }}' -key harbor.key -out harbor.csr
+          openssl x509 -req -sha512 -days 3650 -CA ca.crt -CAkey ca.key -CAcreateserial -in harbor.csr -out harbor.crt
+          openssl x509 -inform PEM -in harbor.crt -out harbor.cert
+        creates: /etc/pki/harbor.cert
+
+    - name: Create certificates directory in data
+      become: True
+      ansible.builtin.file:
+        path: /data/cert
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Copy certificates to data
+      become: True
+      ansible.builtin.copy:
+        remote_src: True
+        src: '/etc/pki/{{ item }}'
+        dest: '/data/cert'
+      loop:
+        - harbor.crt
+        - harbor.key
+
+    - name: Create certificate directory for Docker
+      become: True
+      ansible.builtin.file:
+        path: /etc/docker/certs.d/harbor
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Copy certificates for Docker
+      become: True
+      ansible.builtin.copy:
+        remote_src: True
+        src: '/etc/pki/{{ item }}'
+        dest: '/etc/docker/certs.d/harbor'
+      loop:
+        - ca.crt
+        - harbor.cert
+        - harbor.key
+      register: docker_certs
+
+    - name: Restart Docker
+      become: True
+      when: docker_certs.changed
+      ansible.builtin.systemd:
+        name: docker.service
+        state: restarted
+
+    - name: Copy harbor.yml.tmpl
+      ansible.builtin.copy:
+        remote_src: True
+        src: /home/ubuntu/harbor/harbor.yml.tmpl
+        dest: /home/ubuntu/harbor/harbor.yml
+
+    - name: Set hostname for Harbor
+      ansible.builtin.lineinfile:
+        line: 'hostname: {{ ansible_host }}'
+        regexp: '^hostname: '
+        path: /home/ubuntu/harbor/harbor.yml
+
+    - name: Set certificate paths in configuration
+      ansible.builtin.lineinfile:
+        path: /home/ubuntu/harbor/harbor.yml
+        line: '  {{ item.key }}: {{ item.value }}'
+        regexp: '^  {{ item.key }}: '
+      loop:
+        - key: certificate
+          value: /data/cert/harbor.crt
+        - key: private_key
+          value: /data/cert/harbor.key
+
+    - name: Install Harbor
+      become: True
+      ansible.builtin.command:
+        chdir: /home/ubuntu/harbor
+        argv:
+          - ./install.sh
+        creates: /data/registry
