@@ -7,7 +7,7 @@
       become: True
       ansible.builtin.lineinfile:
         path: /etc/hosts
-        line: '{{ ansible_default_ipv4.address }} harbor'
+        line: '{{ ansible_default_ipv4.address }} harbor.local'
 
     - name: Setup target directory
       become: True
@@ -47,9 +47,10 @@
           openssl genrsa -out ca.key 4096
           openssl req -x509 -new -nodes -sha512 -days 3650 -subj '/CN=Root CA' -key ca.key -out ca.crt
           openssl genrsa -out harbor.key 4096
-          openssl req -sha512 -new -subj '/CN=harbor' -addext 'subjectAltName=DNS:harbor,IP:{{ ansible_host }},IP:{{ ansible_default_ipv4.address }}' -key harbor.key -out harbor.csr
-          openssl x509 -req -sha512 -days 3650 -CA ca.crt -CAkey ca.key -CAcreateserial -in harbor.csr -out harbor.crt
+          openssl req -sha512 -new -subj '/CN=harbor' -key harbor.key -out harbor.csr
+          openssl x509 -req -sha512 -days 3650 -CA ca.crt -CAkey ca.key -CAcreateserial -extfile <(echo 'subjectAltName=DNS:harbor.local,IP:{{ ansible_host }},IP:{{ ansible_default_ipv4.address }}') -in harbor.csr -out harbor.crt
           openssl x509 -inform PEM -in harbor.crt -out harbor.cert
+        executable: /bin/bash
         creates: /etc/pki/harbor.cert
 
     - name: Create certificates directory in data
@@ -74,7 +75,7 @@
     - name: Create certificate directory for Docker
       become: True
       ansible.builtin.file:
-        path: /etc/docker/certs.d/harbor
+        path: /etc/docker/certs.d/harbor.local
         state: directory
         owner: root
         group: root
@@ -85,19 +86,13 @@
       ansible.builtin.copy:
         remote_src: True
         src: '/etc/pki/{{ item }}'
-        dest: '/etc/docker/certs.d/harbor'
+        dest: /etc/docker/certs.d/harbor.local
       loop:
         - ca.crt
         - harbor.cert
         - harbor.key
       register: docker_certs
-
-    - name: Restart Docker
-      become: True
-      when: docker_certs.changed
-      ansible.builtin.systemd:
-        name: docker.service
-        state: restarted
+      notify: Restart Docker
 
     - name: Copy harbor.yml.tmpl
       ansible.builtin.copy:
@@ -122,6 +117,9 @@
         - key: private_key
           value: /data/cert/harbor.key
 
+    - name: Flush handlers before starting Harbor
+      ansible.builtin.meta: flush_handlers
+
     - name: Install Harbor
       become: True
       ansible.builtin.command:
@@ -129,3 +127,25 @@
         argv:
           - ./install.sh
         creates: /data/registry
+
+    - name: Wait one minute for Harbor to start
+      ansible.builtin.pause:
+        minutes: 1
+
+    - name: Login to Harbor
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - login
+          - --username
+          - admin
+          - --password
+          - Harbor12345
+          - harbor.local
+
+  handlers:
+    - name: Restart Docker
+      become: True
+      ansible.builtin.systemd:
+        name: docker.service
+        state: restarted
