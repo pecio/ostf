@@ -2,6 +2,7 @@
 - name: Install Docker CE in Ubuntu
   hosts: all
   become: True
+  gather_facts: True
   pre_tasks:
     - name: Update Apt cache
       ansible.builtin.apt:
@@ -13,6 +14,8 @@
     - name: geerlingguy.docker
       docker_users:
         - ubuntu
+      # We need the following syntax to get an int in the JSON
+      docker_daemon_options: "{{ { 'mtu': ansible_default_ipv4.mtu|int } }}"
   tasks:
     - name: Sync buffers
       ansible.builtin.shell: 'sync; sleep 1; sync'
