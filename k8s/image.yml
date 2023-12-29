@@ -1,0 +1,69 @@
+---
+- name: Create OVN Kubernetes DaemonSet container image
+  hosts: harbor
+  become: False
+  vars:
+    workdir: /home/ubuntu/work/src/github.com/ovn-org/ovn-kubernetes
+  tasks:
+    - name: Ensure make is available
+      become: True
+      ansible.builtin.apt:
+        name:
+          - make
+
+    - name: Download go distribution
+      ansible.builtin.get_url:
+        url: https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+        dest: /tmp/go.tar.gz
+
+    - name: Unpack go
+      become: True
+      ansible.builtin.unarchive:
+        remote_src: True
+        dest: /usr/local
+        src: /tmp/go.tar.gz
+        creates: /usr/local/go
+
+    - name: Ensure work directory
+      ansible.builtin.file:
+        path: '{{ workdir }}'
+        state: directory
+
+    - name: Clone ovn-kubernetes repository
+      ansible.builtin.git:
+        dest: '{{ workdir }}'
+        repo: https://github.com/ovn-org/ovn-kubernetes
+
+    - name: Build binaries
+      community.general.make:
+        chdir: '{{ workdir }}/go-controller'
+      environment:
+        PATH: /bin:/usr/bin:/usr/local/bin:/usr/local/go/bin
+
+    - name: Copy binaries
+      ansible.builtin.copy:
+        remote_src: True
+        src: '{{ workdir }}/go-controller/_output/go/bin/{{ item }}'
+        dest: '{{ workdir }}/dist/images/'
+      loop:
+        - ovnkube
+        - ovn-k8s-cni-overlay
+        - ovn-kube-util
+        - hybrid-overlay-node
+        - ovndbchecker
+        - ovnkube-trace
+        - ovnkube-identity
+
+    - name: Create git_info
+      ansible.builtin.shell:
+        cmd: 'echo "ref: $(git rev-parse  --symbolic-full-name HEAD)  commit: $(git rev-parse  HEAD)" > git_info'
+        chdir: '{{ workdir }}/dist/images'
+
+    - name: Build image
+      community.docker.docker_image:
+        build:
+          path: '{{ workdir }}/dist/images'
+          dockerfile: Dockerfile.fedora
+        name: harbor.local/library/ovn-daemonset-f
+        push: True
+        source: build
