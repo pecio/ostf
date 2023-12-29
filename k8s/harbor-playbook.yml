@@ -1,0 +1,6 @@
+- name: Install Harbor
+  hosts:
+    - harbor
+  become: False
+  roles:
+    - name: harbor
