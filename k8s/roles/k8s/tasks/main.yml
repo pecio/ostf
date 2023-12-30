@@ -36,7 +36,7 @@
 
 - name: Join other nodes
   become: True
-  when: kubeadm_init is defined
+  when: kubeadm_init is defined and kubeadm_init.changed|bool
   ansible.builtin.shell:
     cmd: |
       {{ kubeadm_init.stdout_lines[-2] }}
