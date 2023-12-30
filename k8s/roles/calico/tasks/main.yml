@@ -17,3 +17,12 @@
 - name: Install Calico custom resources
   kubernetes.core.k8s:
     src: /home/ubuntu/calico-custom-resources.yaml
+
+- name: Install caclicoctl as kubectl plugin
+  become: True
+  ansible.builtin.get_url:
+    url: 'https://github.com/projectcalico/calico/releases/download/{{ calico_version }}/calicoctl-linux-amd64'
+    dest: /usr/local/bin/kubectl-calico
+    mode: '0755'
+    owner: root
+    group: root
