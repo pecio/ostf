@@ -5,3 +5,10 @@
   become: False
   roles:
     - name: k8s
+
+- name: Install OVN Kubernetes
+  hosts:
+    - node0
+  become: False
+  roles:
+    - name: ovn-kubernetes

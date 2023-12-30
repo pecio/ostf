@@ -42,3 +42,6 @@
       {{ kubeadm_init.stdout_lines[-2] }}
       {{ kubeadm_init.stdout_lines[-1] }}
     creates: /etc/kubernetes/kubelet.conf
+
+- name: Setup Harbor connection
+  ansible.builtin.include_tasks: harbor-connect.yml

@@ -1,2 +1,6 @@
 ---
-# handlers file for k8s
+- name: Update System CA Certificates
+  become: True
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/update-ca-certificates
