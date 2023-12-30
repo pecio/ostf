@@ -1,0 +1,31 @@
+---
+- name: Install Harbor
+  hosts:
+    - harbor
+  become: False
+  gather_facts: True
+  gather_subset:
+    - '!all'
+    - interfaces
+  roles:
+    - name: harbor
+
+- name: Create Kubernetes cluster
+  hosts:
+    - k8s
+  become: False
+  gather_facts: False
+  roles:
+    - name: k8s
+      pod_network_cidr: 10.8.0.0/16
+      svc_network_cidr: 172.18.0.0/16
+
+- name: Install Calico
+  hosts:
+    - node0
+  become: False
+  gather_facts: False
+  roles:
+    - name: calico
+      pod_network_cidr: 10.8.0.0/16
+      svc_network_cidr: 172.18.0.0/16

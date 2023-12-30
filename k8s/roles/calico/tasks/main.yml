@@ -1,0 +1,19 @@
+---
+- name: Install Tigera Operator
+  kubernetes.core.k8s:
+    src: 'https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/tigera-operator.yaml'
+
+- name: Download Calico custom resources
+  ansible.builtin.get_url:
+    url: 'https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/custom-resources.yaml'
+    dest: /home/ubuntu/calico-custom-resources.yaml
+
+- name: Set Pod network CIDR
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/calico-custom-resources.yaml
+    line: '      cidr: {{ pod_network_cidr }}'
+    regexp: '^      cidr: [1-9].*'
+
+- name: Install Calico custom resources
+  kubernetes.core.k8s:
+    src: /home/ubuntu/calico-custom-resources.yaml
