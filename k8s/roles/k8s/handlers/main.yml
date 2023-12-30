@@ -4,3 +4,11 @@
   ansible.builtin.command:
     argv:
       - /usr/sbin/update-ca-certificates
+  listen: certificate-installed
+
+- name: Restart crio.service
+  become: True
+  ansible.builtin.systemd:
+    name: crio.service
+    state: restarted
+  listen: certificate-installed

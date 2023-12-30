@@ -14,4 +14,4 @@
     owner: root
     group: root
     mode: '0644'
-  notify: Update System CA Certificates
+  notify: certificate-installed
