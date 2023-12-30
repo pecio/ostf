@@ -91,7 +91,7 @@
   delegate_to: localhost
   become: True
   ansible.builtin.copy:
-    dest: /var/lib/openvswitch/pki/obnsb-req.pem
+    dest: /var/lib/openvswitch/pki/ovnsb-req.pem
     content: '{{ ovnsb_req.content | b64decode }}'
 
 - name: Sign SB Database certificate request
