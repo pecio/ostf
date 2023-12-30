@@ -1,0 +1,44 @@
+---
+- name: Init cluster
+  run_once: True
+  block:
+    - name: Init cluster
+      become: True
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/kubeadm
+          - init
+          - '--pod-network-cidr={{ pod_network_cidr }}'
+        creates: /etc/kubernetes/kubelet.conf
+      register: kubeadm_init
+
+    - name: Create kubectl directory
+      ansible.builtin.file:
+        path: /home/ubuntu/.kube
+        state: directory
+        mode: '0700'
+
+    - name: Setup kubectl
+      become: True
+      ansible.builtin.copy:
+        remote_src: True
+        src: /etc/kubernetes/admin.conf
+        dest: /home/ubuntu/.kube/config
+        mode: '0600'
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Install python3-kubernetes
+      become: True
+      ansible.builtin.apt:
+        name: python3-kubernetes
+        state: present
+
+- name: Join other nodes
+  become: True
+  when: kubeadm_init is defined
+  ansible.builtin.shell:
+    cmd: |
+      {{ kubeadm_init.stdout_lines[-2] }}
+      {{ kubeadm_init.stdout_lines[-1] }}
+    creates: /etc/kubernetes/kubelet.conf

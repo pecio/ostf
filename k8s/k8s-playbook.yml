@@ -1,0 +1,7 @@
+---
+- name: Create Kubernetes cluster
+  hosts:
+    - k8s
+  become: False
+  roles:
+    - name: k8s
