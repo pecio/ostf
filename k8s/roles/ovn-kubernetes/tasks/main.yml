@@ -57,7 +57,7 @@
 
 - name: Create ovnkube-node ServiceAccount
   kubernetes.core.k8s:
-    src: '{{ workdir }}/rbac-ovnkube-node.yaml'
+    src: '{{ workdir }}/dist/yaml/rbac-ovnkube-node.yaml'
 
 - name: Create ovnkube DaemonSet
   kubernetes.core.k8s:
