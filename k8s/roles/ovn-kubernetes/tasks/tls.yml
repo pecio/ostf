@@ -1,0 +1,116 @@
+---
+- name: Init local OVS CAs
+  delegate_to: localhost
+  become: True
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/ovs-pki
+      - init
+      - --force
+    creates: /var/lib/openvswitch/pki/switchca/cacert.pem
+
+- name: Ensure OVS tools present
+  become: True
+  ansible.builtin.apt:
+    name: openvswitch-common
+
+- name: Ensure OVN Kubernetes certificates directory
+  become: True
+  ansible.builtin.file:
+    path: /etc/openvswitch
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Copy switch CA certificate
+  become: True
+  ansible.builtin.copy:
+    src: /var/lib/openvswitch/pki/switchca/cacert.pem
+    dest: /etc/openvswitch/
+
+- name: Generate NB Database certificate request
+  become: True
+  ansible.builtin.command:
+    chdir: /etc/openvswitch
+    argv:
+      - /usr/bin/ovs-pki
+      - req
+      - ovnnb
+    creates: /etc/openvswitch/ovnnb-req.pem
+
+- name: Fetch NB Database certificate request
+  ansible.builtin.slurp:
+    src: /etc/openvswitch/ovnnb-req.pem
+  register: ovnnb_req
+
+- name: Write NB Database certificate request locally
+  delegate_to: localhost
+  become: True
+  ansible.builtin.copy:
+    dest: /var/lib/openvswitch/pki/ovnnb-req.pem
+    content: '{{ ovnnb_req.content | b64decode }}'
+
+- name: Sign NB Database certificate request
+  delegate_to: localhost
+  become: True
+  ansible.builtin.command:
+    chdir: /var/lib/openvswitch/pki
+    argv:
+      - /usr/bin/ovs-pki
+      - -b
+      - sign
+      - ovnnb
+    creates: /var/lib/openvswitch/pki/ovnnb-cert.pem
+
+- name: Copy signed NB Database certificate
+  become: True
+  ansible.builtin.copy:
+    src: /var/lib/openvswitch/pki/ovnnb-cert.pem
+    dest: /etc/openvswitch/
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Generate SB Database certificate request
+  become: True
+  ansible.builtin.command:
+    chdir: /etc/openvswitch
+    argv:
+      - /usr/bin/ovs-pki
+      - req
+      - ovnsb
+    creates: /etc/openvswitch/ovnsb-req.pem
+
+- name: Fetch SB Database certificate request
+  ansible.builtin.slurp:
+    src: /etc/openvswitch/ovnsb-req.pem
+  register: ovnsb_req
+
+- name: Write SB Database certificate request locally
+  delegate_to: localhost
+  become: True
+  ansible.builtin.copy:
+    dest: /var/lib/openvswitch/pki/obnsb-req.pem
+    content: '{{ ovnsb_req.content | b64decode }}'
+
+- name: Sign SB Database certificate request
+  delegate_to: localhost
+  become: True
+  ansible.builtin.command:
+    chdir: /var/lib/openvswitch/pki
+    argv:
+      - /usr/bin/ovs-pki
+      - -b
+      - sign
+      - ovnsb
+    creates: /var/lib/openvswitch/pki/ovnsb-cert.pem
+
+- name: Copy signed SB Database certificate
+  become: True
+  ansible.builtin.copy:
+    src: /var/lib/openvswitch/pki/ovnsb-cert.pem
+    dest: /etc/openvswitch/
+    mode: '0644'
+    owner: root
+    group: root

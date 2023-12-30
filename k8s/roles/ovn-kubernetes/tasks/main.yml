@@ -4,6 +4,9 @@
   ansible.builtin.apt:
     name: git-core
 
+- name: Setup TLS for OVN Kubernetes
+  ansible.builtin.include_tasks: tls.yml
+
 - name: Checkout OVN Kubernetes code
   ansible.builtin.git:
     repo: https://github.com/ovn-org/ovn-kubernetes
