@@ -134,32 +134,35 @@
       - ./install.sh
     creates: /data/registry
 
-- name: Wait one minute for Harbor to start
-  ansible.builtin.pause:
-    minutes: 1
-
-- name: Get admin id
+- name: Wait for harbor to start
   ansible.builtin.uri:
-    url: https://harbor.local/api/v2.0/users/current
-    url_username: admin
-    url_password: Harbor12345
-    force_basic_auth: True
-    method: GET
-  register: admin_info
+    url: https://harbor.local/api/v2.0/health
+  register: health
+  until: health.status == 200 and health.json.status == "healthy"
+  retries: 30
+  delay: 5
 
-- name: Update admin password
-  ansible.builtin.uri:
-    url: 'https://harbor.local/api/v2.0/users/{{ admin_info.json.user_id }}/password'
-    url_username: admin
-    url_password: Harbor12345
-    force_basic_auth: True
-    method: PUT
-    body_format: json
-    body:
-      old_password: Harbor12345
-      new_password: '{{ admin_password }}'
+- name: Change admin password
+  ansible.builtin.include_tasks: change_admin_password.yml
+
+- name: Create K8s user
+  ansible.builtin.include_tasks: create_k8s_user.yml
+
+- name: Check if /root/.docker/config.json exists
+  become: True
+  ansible.builtin.stat:
+    path: /root/.docker/config.json
+  register: root_docker_config_json
+
+- name: Read /root/.docker/config.json
+  become: True
+  when: root_docker_config_json.stat.exists
+  ansible.builtin.slurp:
+    path: /root/.docker/config.json
+  register: root_docker_config_json_content
 
 - name: Login local Docker to Harbor
+  when: not root_docker_config_json.stat.exists or not (root_docker_config_json_content.content | b64decode is search("harbor.local") )
   ansible.builtin.command:
     argv:
       - /usr/bin/docker
@@ -167,20 +170,5 @@
       - --username
       - admin
       - --password
-      - '{{ admin_password }}'
+      - '{{ harbor_admin_password }}'
       - harbor.local
-
-- name: Create k8s user
-  ansible.builtin.uri:
-    url: https://harbor.local/api/v2.0/users
-    url_username: admin
-    url_password: '{{ admin_password }}'
-    force_basic_auth: True
-    method: POST
-    body_format: json
-    body:
-      email: none@none.net
-      realname: K8s
-      comment: ''
-      password: '{{ k8s_user_password }}'
-      username: k8s

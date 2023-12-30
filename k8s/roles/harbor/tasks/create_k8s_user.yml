@@ -1,0 +1,25 @@
+- name: Check for k8s user
+  ansible.builtin.uri:
+    url: https://harbor.local/api/v2.0/users/search?username=k8s
+    url_username: admin
+    url_password: '{{ harbor_admin_password }}'
+    force_basic_auth: True
+    method: GET
+  register: check_user
+  failed_when: check_user is failed and check_user.status != 404
+
+- name: Create k8s user
+  when: check_user.status == 404
+  ansible.builtin.uri:
+    url: https://harbor.local/api/v2.0/users
+    url_username: admin
+    url_password: '{{ harbor_admin_password }}'
+    force_basic_auth: True
+    method: POST
+    body_format: json
+    body:
+      email: none@none.net
+      realname: K8s
+      comment: ''
+      password: '{{ k8s_user_password }}'
+      username: k8s
