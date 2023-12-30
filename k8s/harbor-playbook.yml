@@ -4,3 +4,4 @@
   become: False
   roles:
     - name: harbor
+    - name: ovn-image
