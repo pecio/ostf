@@ -9,6 +9,12 @@
     repo: https://github.com/ovn-org/ovn-kubernetes
     dest: '{{ workdir }}'
 
+- name: Get host IP address
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - interfaces
+
 - name: Run DaemonSet YAML creation script
   ansible.builtin.command:
     chdir: '{{ workdir }}/dist/images'
@@ -45,6 +51,10 @@
 - name: Create ovnkube-master Deployment
   kubernetes.core.k8s:
     src: '{{ workdir }}/dist/yaml/ovnkube-master.yaml'
+
+- name: Create ovnkube-node ServiceAccount
+  kubernetes.core.k8s:
+    src: '{{ workdir }}/rbac-ovnkube-node.yaml'
 
 - name: Create ovnkube DaemonSet
   kubernetes.core.k8s:
