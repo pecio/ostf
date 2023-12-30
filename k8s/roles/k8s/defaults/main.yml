@@ -1,3 +1,4 @@
 ---
 pod_network_cidr: 10.80.0.0/12
+svc_network_cidr: 10.96.0.0/12
 tigera_version: v3.27.0
