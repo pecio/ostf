@@ -3,6 +3,7 @@
   hosts:
     - k8s
   become: False
+  gather_facts: False
   roles:
     - name: k8s
 
@@ -10,5 +11,11 @@
   hosts:
     - node0
   become: False
+  gather_facts: True
   roles:
+    - name: geerlingguy.pip
+      become: True
+      pip_install_packages:
+        - name: jinjanator
+
     - name: ovn-kubernetes
