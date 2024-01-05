@@ -31,6 +31,17 @@ resource "openstack_networking_secgroup_rule_v2" "k8s_ipv6" {
   security_group_id = openstack_networking_secgroup_v2.k8s.id
 }
 
+resource "openstack_networking_secgroup_rule_v2" "k8s_nodeports" {
+  for_each = toset(["tcp", "udp"])
+
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = each.value
+  port_range_min    = 30000
+  port_range_max    = 31999
+  security_group_id = openstack_networking_secgroup_v2.k8s.id
+}
+
 resource "openstack_networking_secgroup_v2" "harbor" {
   name        = "harbor-${random_pet.suffix.id}"
   description = "Allow harbor ports"
