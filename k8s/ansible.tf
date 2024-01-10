@@ -14,7 +14,11 @@ resource "ansible_group" "k8s" {
   name = "k8s"
 
   variables = {
-    harbor_ip = openstack_compute_instance_v2.harbor.access_ip_v4
+    harbor_ip           = openstack_compute_instance_v2.harbor.access_ip_v4
+    credential_id       = openstack_identity_application_credential_v3.kubernetes.id
+    credential_secret   = openstack_identity_application_credential_v3.kubernetes.secret
+    floating_network_id = data.openstack_networking_network_v2.public.id
+    subnet_id           = data.openstack_networking_subnet_v2.private_subnet.id
   }
 }
 

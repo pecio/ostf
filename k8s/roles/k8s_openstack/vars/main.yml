@@ -1,0 +1,8 @@
+---
+controller_manager_manifests:
+  - url: https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-roles.yaml
+    filename: cloud-controller-manager-roles.yaml
+  - url: https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-role-bindings.yaml
+    filename: cloud-controller-manager-role-bindings.yaml
+  - url: https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/openstack-cloud-controller-manager-ds.yaml
+    filename: openstack-cloud-controller-manager-ds.yaml

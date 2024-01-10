@@ -1,0 +1,37 @@
+---
+- name: Create configuration secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: cloud-config
+        namespace: kube-system
+      type: generic
+      stringData:
+        cloud.conf: |
+          [Global]
+          auth-url=http://192.168.1.20/identity
+          application-credential-id={{ credential_id }}
+          application-credential-secret={{ credential_secret }}
+
+          [LoadBalancer]
+          floating-network-id={{ floating_network_id }}
+          subnet-id={{ subnet_id }}
+
+- name: Fetch OpenStack Controller Manager manifests
+  ansible.builtin.get_url:
+    url: '{{ item.url }}'
+    dest: '/tmp/{{ item.filename }}'
+    mode: '0600'
+  loop: '{{ controller_manager_manifests }}'
+  loop_control:
+    label: '{{ item.filename }}'
+
+- name: Apply OpenStack Controller Manager manifests
+  ansible.builtin.k8s:
+    src: '/tmp/{{ item.filename }}'
+  loop: '{{ controller_manager_manifests }}'
+  loop_control:
+    label: '{{ item.filename }}'

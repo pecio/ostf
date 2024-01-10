@@ -29,3 +29,11 @@
     - name: calico
       pod_network_cidr: 10.8.0.0/16
       svc_network_cidr: 172.18.0.0/16
+
+- name: OpenStack integration
+  hosts:
+    - node0
+  become: False
+  gather_facts: False
+  roles:
+    - name: k8s_openstack
