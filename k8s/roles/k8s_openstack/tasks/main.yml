@@ -19,6 +19,8 @@
           [LoadBalancer]
           floating-network-id={{ floating_network_id }}
           subnet-id={{ subnet_id }}
+          lb-provider=ovn
+          lb-method=SOURCE_IP_PORT
 
 - name: Fetch OpenStack Controller Manager manifests
   ansible.builtin.get_url:
