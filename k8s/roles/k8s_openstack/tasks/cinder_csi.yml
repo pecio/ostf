@@ -1,0 +1,32 @@
+---
+- name: Fetch Cinder CSI Plugin manifests
+  ansible.builtin.get_url:
+    url: '{{ item.url }}'
+    dest: '/tmp/{{ item.filename }}'
+    mode: '0600'
+  loop: '{{ cinder_csi_plugin_manifests }}'
+  loop_control:
+    label: '{{ item.filename }}'
+
+- name: Apply Cinder CSI Plugin manifests
+  kubernetes.core.k8s:
+    src: '/tmp/{{ item.filename }}'
+  loop: '{{ cinder_csi_plugin_manifests }}'
+  loop_control:
+    label: '{{ item.filename }}'
+
+- name: Apply Storage Class
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: csi-sc-cinder
+        annotations:
+          storageclass.kubernetes.io/is-default-class: "true"
+      provisioner: cinder.csi.openstack.org
+      parameters:
+        availability: nova
+      allowVolumeExpansion: true
+      volumeBindingMode: Immediate

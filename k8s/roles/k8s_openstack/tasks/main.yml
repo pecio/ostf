@@ -37,3 +37,6 @@
   loop: '{{ controller_manager_manifests }}'
   loop_control:
     label: '{{ item.filename }}'
+
+- name: Configure Cinder CSI Plugin
+  ansible.builtin.include_tasks: cinder_csi.yml

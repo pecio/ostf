@@ -6,3 +6,15 @@ controller_manager_manifests:
     filename: cloud-controller-manager-role-bindings.yaml
   - url: https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/openstack-cloud-controller-manager-ds.yaml
     filename: openstack-cloud-controller-manager-ds.yaml
+
+cinder_csi_plugin_manifests:
+  - url: https://github.com/kubernetes/cloud-provider-openstack/raw/master/manifests/cinder-csi-plugin/cinder-csi-controllerplugin-rbac.yaml
+    filename: cinder-csi-controllerpugin-rbac.yaml
+  - url: https://github.com/kubernetes/cloud-provider-openstack/raw/master/manifests/cinder-csi-plugin/cinder-csi-controllerplugin.yaml
+    filename: cinder-csi-controllerplugin.yaml
+  - url: https://github.com/kubernetes/cloud-provider-openstack/raw/master/manifests/cinder-csi-plugin/cinder-csi-nodeplugin-rbac.yaml
+    filename: cinder-csi-nodeplugin-rbac.yaml
+  - url: https://github.com/kubernetes/cloud-provider-openstack/raw/master/manifests/cinder-csi-plugin/cinder-csi-nodeplugin.yaml
+    filename: cinder-csi-nodeplugin.yaml
+  - url: https://github.com/kubernetes/cloud-provider-openstack/raw/master/manifests/cinder-csi-plugin/csi-cinder-driver.yaml
+    filename: csi-cinder-driver.yaml
