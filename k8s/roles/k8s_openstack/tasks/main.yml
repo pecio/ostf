@@ -40,16 +40,22 @@
   ansible.builtin.set_fact:
     manifests_base_url: "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/{{ cpo_release }}/manifests"
 
+- name: Ensure manifests directory
+  ansible.builtin.file:
+    path: '{{ manifest_dir }}'
+    state: directory
+    mode: '0755'
+
 - name: Fetch OpenStack Controller Manager manifests
   ansible.builtin.get_url:
     url: '{{ manifests_base_url }}/controller-manager/{{ item }}'
-    dest: '/tmp/{{ item }}'
+    dest: '{{ manifest_dir }}/{{ item }}'
     mode: '0600'
   loop: '{{ controller_manager_manifests }}'
 
 - name: Apply OpenStack Controller Manager manifests
   ansible.builtin.k8s:
-    src: '/tmp/{{ item }}'
+    src: '{{ manifest_dir }}/{{ item }}'
   loop: '{{ controller_manager_manifests }}'
 
 - name: Configure Cinder CSI Plugin

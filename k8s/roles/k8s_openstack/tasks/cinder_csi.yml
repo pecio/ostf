@@ -2,13 +2,13 @@
 - name: Fetch Cinder CSI Plugin manifests
   ansible.builtin.get_url:
     url: '{{ manifests_base_url }}/cinder-csi-plugin/{{ item }}'
-    dest: '/tmp/{{ item }}'
+    dest: '{{ manifest_dir }}/{{ item }}'
     mode: '0600'
   loop: '{{ cinder_csi_plugin_manifests }}'
 
 - name: Apply Cinder CSI Plugin manifests
   kubernetes.core.k8s:
-    src: '/tmp/{{ item }}'
+    src: '{{ manifest_dir }}/{{ item }}'
   loop: '{{ cinder_csi_plugin_manifests }}'
 
 - name: Apply Storage Class

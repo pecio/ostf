@@ -1,4 +1,6 @@
 ---
+manifest_dir: /var/tmp/cloud-provider-openstack
+
 controller_manager_manifests:
   - cloud-controller-manager-roles.yaml
   - cloud-controller-manager-role-bindings.yaml
