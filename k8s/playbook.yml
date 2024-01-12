@@ -36,4 +36,6 @@
   become: False
   gather_facts: False
   roles:
+    - name: geerlingguy.helm
+      become: True
     - name: k8s_openstack

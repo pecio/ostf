@@ -19,6 +19,8 @@ resource "ansible_group" "k8s" {
     credential_secret   = openstack_identity_application_credential_v3.kubernetes.secret
     floating_network_id = data.openstack_networking_network_v2.public.id
     subnet_id           = data.openstack_networking_subnet_v2.private_subnet.id
+    openstack_auth_url  = local.identity_url
+    share_network_id    = openstack_sharedfilesystem_sharenetwork_v2.sharenetwork.id
   }
 }
 

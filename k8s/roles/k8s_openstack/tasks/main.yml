@@ -1,4 +1,26 @@
 ---
+- name: Get Cluster information
+  kubernetes.core.k8s_cluster_info:
+  register: api_status
+
+- name: Set Kubernetes minor version variable
+  ansible.builtin.set_fact:
+    k8s_version_minor: "v{{ api_status.version.server.kubernetes.major }}.{{ api_status.version.server.kubernetes.minor }}"
+
+- name: Fetch K8s Cloud Provider OpenStack releases
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/kubernetes/cloud-provider-openstack/releases?per_page=100
+    return_content: True
+  register: releases_raw
+
+- name: Parse releases
+  ansible.builtin.set_fact:
+    cpo_release: "{{ releases_raw.content |
+                    ansible.builtin.from_json |
+                    selectattr('tag_name', 'match', '^' + k8s_version_minor) |
+                    map(attribute='tag_name') |
+                    first }}"
+
 - name: Create configuration secret
   kubernetes.core.k8s:
     state: present
@@ -21,20 +43,6 @@
           subnet-id={{ subnet_id }}
           lb-provider=ovn
           lb-method=SOURCE_IP_PORT
-
-- name: Fetch K8s Cloud Provider OpenStack releases
-  ansible.builtin.uri:
-    url: https://api.github.com/repos/kubernetes/cloud-provider-openstack/releases?per_page=100
-    return_content: True
-  register: releases_raw
-
-- name: Parse releases
-  ansible.builtin.set_fact:
-    cpo_release: "{{ releases_raw.content |
-                    ansible.builtin.from_json |
-                    selectattr('tag_name', 'match', '^' + k8s_version_minor) |
-                    map(attribute='tag_name') |
-                    first }}"
 
 - name: Set base download URL
   ansible.builtin.set_fact:
@@ -60,3 +68,6 @@
 
 - name: Configure Cinder CSI Plugin
   ansible.builtin.include_tasks: cinder_csi.yml
+
+- name: Setup Manila CSI Plugin
+  ansible.builtin.include_tasks: manila_csi.yml

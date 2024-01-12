@@ -34,6 +34,12 @@ set -o xtrace
       --enable
   fi
 )
+# Fix Glance permissions
+# Otherwise, Manila fails to launch share servers
+(
+  . ~/devstack/openrc admin admin
+  openstack role add --project service --user glance reader
+)
 # Create packer security group
 (
   . ~/devstack/openrc demo demo
