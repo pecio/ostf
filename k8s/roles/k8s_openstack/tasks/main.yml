@@ -22,21 +22,35 @@
           lb-provider=ovn
           lb-method=SOURCE_IP_PORT
 
+- name: Fetch K8s Cloud Provider OpenStack releases
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/kubernetes/cloud-provider-openstack/releases?per_page=100
+    return_content: True
+  register: releases_raw
+
+- name: Parse releases
+  ansible.builtin.set_fact:
+    cpo_release: "{{ releases_raw.content |
+                    ansible.builtin.from_json |
+                    selectattr('tag_name', 'match', '^' + k8s_version_minor) |
+                    map(attribute='tag_name') |
+                    first }}"
+
+- name: Set base download URL
+  ansible.builtin.set_fact:
+    manifests_base_url: "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/{{ cpo_release }}/manifests"
+
 - name: Fetch OpenStack Controller Manager manifests
   ansible.builtin.get_url:
-    url: '{{ item.url }}'
-    dest: '/tmp/{{ item.filename }}'
+    url: '{{ manifests_base_url }}/controller-manager/{{ item }}'
+    dest: '/tmp/{{ item }}'
     mode: '0600'
   loop: '{{ controller_manager_manifests }}'
-  loop_control:
-    label: '{{ item.filename }}'
 
 - name: Apply OpenStack Controller Manager manifests
   ansible.builtin.k8s:
-    src: '/tmp/{{ item.filename }}'
+    src: '/tmp/{{ item }}'
   loop: '{{ controller_manager_manifests }}'
-  loop_control:
-    label: '{{ item.filename }}'
 
 - name: Configure Cinder CSI Plugin
   ansible.builtin.include_tasks: cinder_csi.yml
