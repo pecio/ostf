@@ -129,11 +129,18 @@
           - kubectl
         update_cache: yes
 
+    - name: Hold Kubernetes packages
+      become: True
+      ansible.builtin.dpkg_selections:
+        selection: hold
+        name: '{{ item }}'
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl
+
     - name: Enable CRI-O
       become: True
       ansible.builtin.systemd_service:
         name: crio.service
         enabled: True
-
-    - name: Sync buffers
-      ansible.builtin.shell: 'sync; sleep 1; sync'
