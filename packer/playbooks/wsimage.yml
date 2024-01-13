@@ -19,6 +19,3 @@
           - qemu-guest-agent
         autoclean: yes
         autoremove: yes
-
-    - name: Sync buffers
-      ansible.builtin.shell: 'sync; sleep 1; sync;'

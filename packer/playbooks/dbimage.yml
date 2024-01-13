@@ -27,7 +27,3 @@
         option: bind-address
         section: mysqld
         value: 0.0.0.0
-
-    - name: Sync buffers
-      ansible.builtin.shell: 'sync; sleep 1; sync;'
-...
