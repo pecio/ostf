@@ -35,6 +35,14 @@
     - node0
   become: False
   gather_facts: False
+  pre_tasks:
+    # https://stackoverflow.com/a/76382917
+    - name: Wait until load is below 5.0
+      ansible.builtin.command: cat /proc/loadavg
+      register: cpu_load
+      until: cpu_load.stdout.split()|first|float < 5.0
+      retries: 60
+      delay: 5
   roles:
     - name: geerlingguy.helm
       become: True
