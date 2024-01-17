@@ -28,6 +28,7 @@
       - --gateway-mode=local
       - '--k8s-apiserver=https://{{ ansible_default_ipv4.address }}:6443'
       - '--image={{ image }}'
+      - --mtu=1300
     creates: '{{ workdir }}/dist/yaml/policy.networking.k8s.io_baselineadminnetworkpolicies.yaml'
     # This is the last file the script creates, run if previous partial success
 
