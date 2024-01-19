@@ -9,7 +9,6 @@
           - /usr/bin/kubeadm
           - init
           - '--pod-network-cidr={{ pod_network_cidr }}'
-          - '--service-cidr={{ svc_network_cidr }}'
         creates: /etc/kubernetes/kubelet.conf
       register: kubeadm_init
 
@@ -35,14 +34,22 @@
         name: python3-kubernetes
         state: present
 
+    - name: Setup Calico
+      ansible.builtin.include_role:
+        name: calico
+
+- name: Check if joined
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_conf
+
 - name: Join other nodes
   become: True
-  when: kubeadm_init is defined and kubeadm_init.changed|bool
+  when: not kubelet_conf.stat.exists
   ansible.builtin.shell:
     cmd: |
       {{ kubeadm_init.stdout_lines[-2] }}
       {{ kubeadm_init.stdout_lines[-1] }}
-    creates: /etc/kubernetes/kubelet.conf
 
 - name: Setup Harbor connection
   ansible.builtin.include_tasks: harbor-connect.yml

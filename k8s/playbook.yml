@@ -17,18 +17,7 @@
   gather_facts: False
   roles:
     - name: k8s
-      pod_network_cidr: 10.8.0.0/16
-      svc_network_cidr: 172.18.0.0/16
-
-- name: Install Calico
-  hosts:
-    - node0
-  become: False
-  gather_facts: False
-  roles:
-    - name: calico
-      pod_network_cidr: 10.8.0.0/16
-      svc_network_cidr: 172.18.0.0/16
+      pod_network_cidr: 172.20.0.0/16
 
 - name: OpenStack integration
   hosts:
@@ -41,7 +30,7 @@
       ansible.builtin.command: cat /proc/loadavg
       register: cpu_load
       until: cpu_load.stdout.split()|first|float < 5.0
-      retries: 60
+      retries: 120
       delay: 5
   roles:
     - name: geerlingguy.helm
