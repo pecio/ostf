@@ -139,6 +139,8 @@
     chdir: /home/ubuntu/harbor
     argv:
       - ./install.sh
+      - --with-clair
+      - --with-chartmuseum
     creates: /data/registry
 
 - name: Wait for harbor to start
