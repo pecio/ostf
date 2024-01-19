@@ -24,13 +24,6 @@ resource "openstack_networking_secgroup_rule_v2" "k8s" {
   security_group_id = openstack_networking_secgroup_v2.k8s.id
 }
 
-resource "openstack_networking_secgroup_rule_v2" "k8s_ipv6" {
-  direction         = "ingress"
-  ethertype         = "IPv6"
-  remote_group_id   = openstack_networking_secgroup_v2.k8s.id
-  security_group_id = openstack_networking_secgroup_v2.k8s.id
-}
-
 resource "openstack_networking_secgroup_rule_v2" "k8s_nodeports" {
   for_each = toset(["tcp", "udp"])
 
