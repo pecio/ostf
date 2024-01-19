@@ -3,20 +3,43 @@
   kubernetes.core.k8s:
     src: 'https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/tigera-operator.yaml'
 
-- name: Download Calico custom resources
-  ansible.builtin.get_url:
-    url: 'https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/custom-resources.yaml'
-    dest: /home/ubuntu/calico-custom-resources.yaml
+- name: Wait for Installation CRD
+  kubernetes.core.k8s_info:
+    kind: CustomResourceDefinition
+    api_version: apiextensions.k8s.io/v1
+    name: installations.operator.tigera.io
+    wait: True
+    wait_condition:
+      type: Established
+    wait_sleep: 1
+    wait_timeout: 10
 
-- name: Set Pod network CIDR
-  ansible.builtin.lineinfile:
-    path: /home/ubuntu/calico-custom-resources.yaml
-    line: '      cidr: {{ pod_network_cidr }}'
-    regexp: '^      cidr: [1-9].*'
-
-- name: Install Calico custom resources
+- name: Calico Installation
   kubernetes.core.k8s:
-    src: /home/ubuntu/calico-custom-resources.yaml
+    definition:
+      apiVersion: operator.tigera.io/v1
+      kind: Installation
+      metadata:
+        name: default
+      spec:
+        calicoNetwork:
+          BGPOption: Enabled
+          ipPools:
+            - blockSize: 26
+              cidr: '{{ pod_network_cidr }}'
+              encapsulation: IPIP
+              natOutgoing: Enabled
+              nodeSelector: all()
+  notify: restart_coredns
+
+- name: Calico API Server
+  kubernetes.core.k8s:
+    definition:
+      apiVersion: operator.tigera.io/v1
+      kind: APIServer
+      metadata:
+        name: default
+      spec: {}
 
 - name: Install caclicoctl as kubectl plugin
   become: True
@@ -26,3 +49,13 @@
     mode: '0755'
     owner: root
     group: root
+
+- name: Wait for calico-node DaemonSet
+  kubernetes.core.k8s_info:
+    kind: DaemonSet
+    api_version: apps/v1
+    name: calico-node
+    namespace: calico-system
+    wait: True
+    wait_sleep: 10
+    wait_timeout: 300
