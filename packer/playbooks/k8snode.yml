@@ -28,19 +28,12 @@
         - net.bridge.bridge-nf-call-ip6tables
         - net.ipv4.ip_forward
 
-    - name: Temporary file for keyrings
-      run_once: True
-      delegate_to: localhost
-      ansible.builtin.tempfile:
-        state: file
-      register: tempfile
-
     - name: Download libcontainers keyring
       run_once: True
-      delegate_to: localhost
-      ansible.builtin.get_url:
-        url: https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_22.04/Release.key
-        dest: '{{ tempfile.path }}'
+      ansible.builtin.uri:
+        url: 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_{{ ansible_distribution_version }}/Release.key'
+        return_content: True
+      register: libcontainers_keyring
 
     - name: Dearmor and install libcontainers keyring
       become: True
@@ -50,15 +43,14 @@
           - --dearmor
           - -o
           - /etc/apt/trusted.gpg.d/libcontainers-archive-keyring.gpg
-        stdin: '{{ lookup("file", tempfile.path) }}'
+        stdin: '{{ libcontainers_keyring.content }}'
 
     - name: Download CRI-O keyring
       run_once: True
-      delegate_to: localhost
-      ansible.builtin.get_url:
-        url: 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ version }}/xUbuntu_22.04/Release.key'
-        dest: '{{ tempfile.path }}'
-        force: True
+      ansible.builtin.uri:
+        url: 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ version }}/xUbuntu_{{ ansible_distribution_version }}/Release.key'
+        return_content: True
+      register: crio_keyring
 
     - name: Dearmor and install CRI-O keyring
       become: True
@@ -68,15 +60,14 @@
           - --dearmor
           - -o
           - /etc/apt/trusted.gpg.d/libcontainers-crio-archive-keyring.gpg
-        stdin: '{{ lookup("file", tempfile.path) }}'
+        stdin: '{{ crio_keyring.content }}'
 
     - name: Download K8s keyring
       run_once: True
-      delegate_to: localhost
-      ansible.builtin.get_url:
+      ansible.builtin.uri:
         url: 'https://pkgs.k8s.io/core:/stable:/v{{ version }}/deb/Release.key'
-        dest: '{{ tempfile.path }}'
-        force: True
+        return_content: True
+      register: k8s_keyring
 
     - name: Dearmor and install K8s keyring
       become: True
@@ -86,14 +77,7 @@
           - --dearmor
           - -o
           - /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg
-        stdin: '{{ lookup("file", tempfile.path) }}'
-
-    - name: Cleanup temporary file
-      run_once: True
-      delegate_to: localhost
-      ansible.builtin.file:
-        path: '{{ tempfile.path }}'
-        state: absent
+        stdin: '{{ k8s_keyring.content }}'
 
     - name: Install python3-apt
       become: True
@@ -110,9 +94,9 @@
         update_cache: False
       loop:
         - name: devel:kubic:libcontainers:stable
-          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_22.04/ /"
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_{{ ansible_distribution_version }}/ /"
         - name: devel:kubic:libcontainers:stable:cri-o:{{ version }}
-          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ version }}/xUbuntu_22.04/ /"
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ version }}/xUbuntu_{{ ansible_distribution_version }}/ /"
         - name: kubernetes
           repo: "deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ version }}/deb/ /"
       loop_control:
