@@ -3,17 +3,13 @@
   hosts: all
   become: true
   tasks:
-    - name: Upgrade system packages
-      ansible.builtin.apt:
-        upgrade: safe
-        update_cache: true
-
     - name: Install software
       ansible.builtin.apt:
         name:
-        - mariadb-server
-        - qemu-guest-agent
-        - libnss-myhostname
+          - mariadb-server
+          - qemu-guest-agent
+          - libnss-myhostname
+        update_cacke: True
 
     - name: Disable DNS lookup and enable own hostname lookup
       ansible.builtin.lineinfile:
