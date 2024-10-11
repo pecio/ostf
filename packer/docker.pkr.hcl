@@ -1,6 +1,6 @@
 source "openstack" "docker" {
   image_name                   = "docker"
-  flavor                       = "ds512M"
+  flavor                       = "ds1G"
   ssh_username                 = "ubuntu"
   external_source_image_url    = "https://cloud-images.ubuntu.com/minimal/daily/jammy/current/jammy-minimal-cloudimg-amd64.img"
   external_source_image_format = "qcow2"
