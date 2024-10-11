@@ -29,11 +29,28 @@
         owner: ubuntu
         group: ubuntu
 
+    - name: Get Kubernetes version
+      changed_when: False
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/kubectl
+          - version
+          - -o
+          - json
+      register: kubectl_version_cmd
+
+    - name: Get facts for pip role
+      ansible.builtin.setup: {}
+
     - name: Install python3-kubernetes
-      become: True
-      ansible.builtin.apt:
-        name: python3-kubernetes
-        state: present
+      include_role:
+        name: geerlingguy.pip
+        apply:
+          become: True
+      vars:
+        pip_install_packages:
+          - name: kubernetes
+            version: '~={{ (kubectl_version_cmd.stdout | from_json).serverVersion.minor }}.0'
 
     - name: Setup Calico
       ansible.builtin.include_role:
