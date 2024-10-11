@@ -35,4 +35,5 @@
   roles:
     - name: geerlingguy.helm
       become: True
+      helm_version: v3.16.1
     - name: k8s_openstack
