@@ -30,6 +30,7 @@ resource "ansible_group" "all" {
   variables = {
     ansible_ssh_private_key_file = local_sensitive_file.private_key.filename
     ansible_user                 = "ubuntu"
+    ansible_ssh_common_args      = "-o StrictHostKeyChecking=accept-new"
 
     suffix = random_pet.suffix.id
   }
