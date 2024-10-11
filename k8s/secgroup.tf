@@ -14,10 +14,10 @@ resource "openstack_networking_secgroup_rule_v2" "ssh" {
 
 resource "openstack_networking_secgroup_v2" "k8s" {
   name        = "k8s-${random_pet.suffix.id}"
-  description = "Allow any for K8s"
+  description = "Allow access to K8s"
 }
 
-resource "openstack_networking_secgroup_rule_v2" "k8s" {
+resource "openstack_networking_secgroup_rule_v2" "k8s_internal" {
   direction         = "ingress"
   ethertype         = "IPv4"
   remote_group_id   = openstack_networking_secgroup_v2.k8s.id
@@ -32,6 +32,15 @@ resource "openstack_networking_secgroup_rule_v2" "k8s_nodeports" {
   protocol          = each.value
   port_range_min    = 30000
   port_range_max    = 31999
+  security_group_id = openstack_networking_secgroup_v2.k8s.id
+}
+
+resource "openstack_networking_secgroup_rule_v2" "k8s_api_server" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 6443
+  port_range_max    = 6443
   security_group_id = openstack_networking_secgroup_v2.k8s.id
 }
 
