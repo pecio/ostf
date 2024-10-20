@@ -9,7 +9,7 @@
           - mariadb-server
           - qemu-guest-agent
           - libnss-myhostname
-        update_cacke: True
+        update_cache: True
 
     - name: Disable DNS lookup and enable own hostname lookup
       ansible.builtin.lineinfile:
