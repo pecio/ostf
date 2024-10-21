@@ -14,6 +14,8 @@ build {
   name    = "dbimage"
   sources = ["source.openstack.dbimage"]
   provisioner "ansible" {
-    playbook_file = "playbooks/dbimage.yml"
+    playbook_file   = "playbooks/dbimage.yml"
+    user            = "ubuntu"
+    extra_arguments = ["--scp-extra-args", "'-O'"]
   }
 }

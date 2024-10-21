@@ -14,6 +14,8 @@ build {
   name    = "k8snode"
   sources = ["source.openstack.k8snode"]
   provisioner "ansible" {
-    playbook_file = "playbooks/k8snode.yml"
+    playbook_file   = "playbooks/k8snode.yml"
+    user            = "ubuntu"
+    extra_arguments = ["--scp-extra-args", "'-O'"]
   }
 }

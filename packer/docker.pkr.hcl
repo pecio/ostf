@@ -14,6 +14,8 @@ build {
   name    = "docker"
   sources = ["source.openstack.docker"]
   provisioner "ansible" {
-    playbook_file = "playbooks/docker.yml"
+    playbook_file   = "playbooks/docker.yml"
+    user            = "ubuntu"
+    extra_arguments = ["--scp-extra-args", "'-O'"]
   }
 }
