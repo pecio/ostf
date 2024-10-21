@@ -1,9 +1,9 @@
 ---
-- name: K8s Prerrequisites
+- name: K8s Prerequisites
   hosts: all
   become: False
   vars:
-    version: 1.28
+    kubernetes_version: v1.31
   tasks:
     - name: Setup module loading
       become: True
@@ -28,27 +28,10 @@
         - net.bridge.bridge-nf-call-ip6tables
         - net.ipv4.ip_forward
 
-    - name: Download libcontainers keyring
-      run_once: True
-      ansible.builtin.uri:
-        url: 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_{{ ansible_distribution_version }}/Release.key'
-        return_content: True
-      register: libcontainers_keyring
-
-    - name: Dearmor and install libcontainers keyring
-      become: True
-      ansible.builtin.command:
-        argv:
-          - /usr/bin/gpg
-          - --dearmor
-          - -o
-          - /etc/apt/trusted.gpg.d/libcontainers-archive-keyring.gpg
-        stdin: '{{ libcontainers_keyring.content }}'
-
     - name: Download CRI-O keyring
       run_once: True
       ansible.builtin.uri:
-        url: 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ version }}/xUbuntu_{{ ansible_distribution_version }}/Release.key'
+        url: 'https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ kubernetes_version }}/deb/Release.key'
         return_content: True
       register: crio_keyring
 
@@ -59,13 +42,13 @@
           - /usr/bin/gpg
           - --dearmor
           - -o
-          - /etc/apt/trusted.gpg.d/libcontainers-crio-archive-keyring.gpg
+          - /etc/apt/trusted.gpg.d/cri-o-apt-keyring.gpg
         stdin: '{{ crio_keyring.content }}'
 
     - name: Download K8s keyring
       run_once: True
       ansible.builtin.uri:
-        url: 'https://pkgs.k8s.io/core:/stable:/v{{ version }}/deb/Release.key'
+        url: 'https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb/Release.key'
         return_content: True
       register: k8s_keyring
 
@@ -93,12 +76,10 @@
         install_python_apt: False
         update_cache: False
       loop:
-        - name: devel:kubic:libcontainers:stable
-          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_{{ ansible_distribution_version }}/ /"
-        - name: devel:kubic:libcontainers:stable:cri-o:{{ version }}
-          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ version }}/xUbuntu_{{ ansible_distribution_version }}/ /"
+        - name: cri-o
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ kubernetes_version }}/deb/ /"
         - name: kubernetes
-          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ version }}/deb/ /"
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb/ /"
       loop_control:
         label: '{{ item.name }}'
 
@@ -107,7 +88,6 @@
       ansible.builtin.apt:
         name:
           - cri-o
-          - cri-o-runc
           - kubelet
           - kubeadm
           - kubectl
