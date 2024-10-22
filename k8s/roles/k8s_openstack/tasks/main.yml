@@ -71,3 +71,12 @@
 
 - name: Setup Manila CSI Plugin
   ansible.builtin.include_tasks: manila_csi.yml
+
+- name: Install Nginx Ingress Controller
+  kubernetes.core.helm:
+    release_name: ingress-nginx
+    release_namespace: ingress-nginx
+    create_namespace: True
+    chart_repo_url: https://kubernetes.github.io/ingress-nginx
+    chart_ref: ingress-nginx
+    release_state: present
