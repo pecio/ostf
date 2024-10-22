@@ -24,8 +24,24 @@
     - node0
   become: False
   gather_facts: False
-  roles:
-    - name: geerlingguy.helm
+  pre_tasks:
+    - name: Install Helm
+      ansible.builtin.include_role:
+        name: geerlingguy.helm
+        apply:
+          become: True
+      vars:
+        helm_version: v3.16.1
+    - name: Install Git
       become: True
-      helm_version: v3.16.1
+      ansible.builtin.apt:
+        name:
+          - git
+        state: present
+    - name: Install Helm diff
+      become: False
+      kubernetes.core.helm_plugin:
+        plugin_path: https://github.com/databus23/helm-diff
+        state: present
+  roles:
     - name: k8s_openstack
