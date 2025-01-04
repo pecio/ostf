@@ -13,11 +13,16 @@ resource "openstack_compute_instance_v2" "harbor" {
   }
 }
 
-resource "openstack_compute_floatingip_v2" "harbor" {
+data "openstack_networking_port_v2" "harbor" {
+  device_id  = openstack_compute_instance_v2.harbor.id
+  network_id = openstack_compute_instance_v2.harbor.network[0].uuid
+}
+
+resource "openstack_networking_floatingip_v2" "harbor" {
   pool = "public"
 }
 
-resource "openstack_compute_floatingip_associate_v2" "harbor" {
-  floating_ip = openstack_compute_floatingip_v2.harbor.address
-  instance_id = openstack_compute_instance_v2.harbor.id
+resource "openstack_networking_floatingip_associate_v2" "harbor" {
+  floating_ip = openstack_networking_floatingip_v2.harbor.address
+  port_id     = data.openstack_networking_port_v2.harbor.id
 }

@@ -15,15 +15,22 @@ resource "openstack_compute_instance_v2" "node" {
   }
 }
 
-resource "openstack_compute_floatingip_v2" "node" {
+data "openstack_networking_port_v2" "node" {
+  count = var.nodes
+
+  device_id  = openstack_compute_instance_v2.node[count.index].id
+  network_id = openstack_compute_instance_v2.node[count.index].network[0].uuid
+}
+
+resource "openstack_networking_floatingip_v2" "node" {
   count = var.nodes
 
   pool = "public"
 }
 
-resource "openstack_compute_floatingip_associate_v2" "node" {
+resource "openstack_networking_floatingip_associate_v2" "node" {
   count = var.nodes
 
-  floating_ip = openstack_compute_floatingip_v2.node[count.index].address
-  instance_id = openstack_compute_instance_v2.node[count.index].id
+  floating_ip = openstack_networking_floatingip_v2.node[count.index].address
+  port_id     = data.openstack_networking_port_v2.node[count.index].id
 }

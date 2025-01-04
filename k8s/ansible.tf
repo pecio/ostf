@@ -6,7 +6,7 @@ resource "ansible_host" "node" {
   groups = [ansible_group.k8s.name]
 
   variables = {
-    ansible_host = openstack_compute_floatingip_v2.node[count.index].address
+    ansible_host = openstack_networking_floatingip_v2.node[count.index].address
   }
 }
 
@@ -40,6 +40,6 @@ resource "ansible_host" "harbor" {
   name = "harbor"
 
   variables = {
-    ansible_host = openstack_compute_floatingip_v2.harbor.address
+    ansible_host = openstack_networking_floatingip_v2.harbor.address
   }
 }

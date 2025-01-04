@@ -1,5 +1,5 @@
 output "node_address" {
-  value = openstack_compute_floatingip_v2.node[*].address
+  value = openstack_networking_floatingip_v2.node[*].address
 }
 
 output "suffix" {
@@ -7,5 +7,5 @@ output "suffix" {
 }
 
 output "harbor_address" {
-  value = openstack_compute_floatingip_v2.harbor.address
+  value = openstack_networking_floatingip_v2.harbor.address
 }
