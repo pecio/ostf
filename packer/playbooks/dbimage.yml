@@ -3,31 +3,23 @@
   hosts: all
   become: true
   tasks:
-    - name: Upgrade system packages
-      apt:
-        upgrade: safe
-        update_cache: true
-
     - name: Install software
-      apt:
+      ansible.builtin.apt:
         name:
-        - mariadb-server
-        - qemu-guest-agent
-        - libnss-myhostname
+          - mariadb-server
+          - qemu-guest-agent
+          - libnss-myhostname
+        update_cache: True
 
     - name: Disable DNS lookup and enable own hostname lookup
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/nsswitch.conf
         regexp: '^hosts:'
         line: 'hosts:          files myhostname'
 
     - name: Make MariaDB listen to outside requests
-      ini_file:
+      community.general.ini_file:
         path: /etc/mysql/mariadb.conf.d/50-server.cnf
         option: bind-address
         section: mysqld
         value: 0.0.0.0
-
-    - name: Sync buffers
-      shell: 'sync; sleep 1; sync;'
-...

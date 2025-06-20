@@ -4,12 +4,12 @@
   become: true
   tasks:
     - name: Upgrade system packages
-      apt:
+      ansible.builtin.apt:
         upgrade: safe
         update_cache: true
 
     - name: Install software
-      apt:
+      ansible.builtin.apt:
         name:
           - apache2
           - libapache2-mod-php
@@ -19,6 +19,3 @@
           - qemu-guest-agent
         autoclean: yes
         autoremove: yes
-
-    - name: Sync buffers
-      shell: 'sync; sleep 1; sync;'

@@ -1,0 +1,65 @@
+---
+- name: Ensure git is installed
+  become: True
+  ansible.builtin.apt:
+    name: git-core
+
+- name: Setup TLS for OVN Kubernetes
+  ansible.builtin.include_tasks: tls.yml
+
+- name: Checkout OVN Kubernetes code
+  ansible.builtin.git:
+    repo: https://github.com/ovn-org/ovn-kubernetes
+    dest: '{{ workdir }}'
+
+- name: Get host IP address
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - interfaces
+
+- name: Run DaemonSet YAML creation script
+  ansible.builtin.command:
+    chdir: '{{ workdir }}/dist/images'
+    argv:
+      - ./daemonset.sh
+      - '--net-cidr={{ pod_network_cidr }}/24'
+      - '--svc-cidr={{ svc_network_cidr }}'
+      - --gateway-mode=local
+      - '--k8s-apiserver=https://{{ ansible_default_ipv4.address }}:6443'
+      - '--image={{ image }}'
+      - --mtu=1300
+    creates: '{{ workdir }}/dist/yaml/policy.networking.k8s.io_baselineadminnetworkpolicies.yaml'
+    # This is the last file the script creates, run if previous partial success
+
+- name: Create base OVN setup
+  kubernetes.core.k8s:
+    src: '{{ workdir }}/dist/yaml/ovn-setup.yaml'
+
+- name: Create OVS Node DaemonSet
+  kubernetes.core.k8s:
+    src: '{{ workdir }}/dist/yaml/ovs-node.yaml'
+
+- name: Create ovnkube-db ServiceAccount
+  kubernetes.core.k8s:
+    src: '{{ workdir }}/dist/yaml/rbac-ovnkube-db.yaml'
+
+- name: Create ovnkube-db Deployment
+  kubernetes.core.k8s:
+    src: '{{ workdir }}/dist/yaml/ovnkube-db.yaml'
+
+- name: Create ovnkube-master ServiceAccount
+  kubernetes.core.k8s:
+    src: '{{ workdir }}/dist/yaml/rbac-ovnkube-master.yaml'
+
+- name: Create ovnkube-master Deployment
+  kubernetes.core.k8s:
+    src: '{{ workdir }}/dist/yaml/ovnkube-master.yaml'
+
+- name: Create ovnkube-node ServiceAccount
+  kubernetes.core.k8s:
+    src: '{{ workdir }}/dist/yaml/rbac-ovnkube-node.yaml'
+
+- name: Create ovnkube DaemonSet
+  kubernetes.core.k8s:
+    src: '{{ workdir }}/dist/yaml/ovnkube-node.yaml'

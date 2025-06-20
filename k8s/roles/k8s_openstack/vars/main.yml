@@ -1,0 +1,14 @@
+---
+manifest_dir: /var/tmp/cloud-provider-openstack
+
+controller_manager_manifests:
+  - cloud-controller-manager-roles.yaml
+  - cloud-controller-manager-role-bindings.yaml
+  - openstack-cloud-controller-manager-ds.yaml
+
+cinder_csi_plugin_manifests:
+  - cinder-csi-controllerplugin-rbac.yaml
+  - cinder-csi-controllerplugin.yaml
+  - cinder-csi-nodeplugin-rbac.yaml
+  - cinder-csi-nodeplugin.yaml
+  - csi-cinder-driver.yaml

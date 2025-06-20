@@ -14,6 +14,8 @@ build {
   name    = "wsimage"
   sources = ["source.openstack.wsimage"]
   provisioner "ansible" {
-    playbook_file = "playbooks/wsimage.yml"
+    playbook_file   = "playbooks/wsimage.yml"
+    user            = "ubuntu"
+    extra_arguments = ["--scp-extra-args", "'-O'"]
   }
 }

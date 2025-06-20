@@ -1,0 +1,9 @@
+---
+collections:
+  - name: cloud.terraform
+  - name: kubernetes.core
+  - name: community.docker
+
+roles:
+  - name: geerlingguy.pip
+  - name: geerlingguy.helm

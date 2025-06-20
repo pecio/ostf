@@ -1,0 +1,12 @@
+---
+- name: Restart coredns
+  listen: restart_coredns
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/kubectl
+      - rollout
+      - restart
+      - deployment
+      - -n
+      - kube-system
+      - coredns

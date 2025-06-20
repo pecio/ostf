@@ -1,0 +1,11 @@
+- name: Restart Docker
+  become: True
+  ansible.builtin.systemd:
+    name: docker.service
+    state: restarted
+
+- name: Update system CA certificates
+  become: True
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/update-ca-certificates

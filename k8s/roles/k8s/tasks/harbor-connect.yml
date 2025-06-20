@@ -1,0 +1,17 @@
+---
+# tasks file for ovn-kubernetes
+- name: Create /etc/hosts entry for harbor.local
+  become: True
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: '{{ harbor_ip }} harbor.local'
+
+- name: Install CA certificate for Harbor
+  become: True
+  ansible.builtin.copy:
+    src: ./ca.crt
+    dest: /usr/local/share/ca-certificates/CA_harbor_local.crt
+    owner: root
+    group: root
+    mode: '0644'
+  notify: certificate-installed

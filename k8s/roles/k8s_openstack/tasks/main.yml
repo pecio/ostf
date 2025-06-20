@@ -1,0 +1,82 @@
+---
+- name: Get Cluster information
+  kubernetes.core.k8s_cluster_info:
+  register: api_status
+
+- name: Set Kubernetes minor version variable
+  ansible.builtin.set_fact:
+    k8s_version_minor: "v{{ api_status.version.server.kubernetes.major }}.{{ api_status.version.server.kubernetes.minor }}"
+
+- name: Fetch K8s Cloud Provider OpenStack releases
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/kubernetes/cloud-provider-openstack/releases?per_page=100
+    return_content: True
+  register: releases_raw
+
+- name: Parse releases
+  ansible.builtin.set_fact:
+    cpo_release: "{{ releases_raw.content |
+                    ansible.builtin.from_json |
+                    selectattr('tag_name', 'match', '^' + k8s_version_minor) |
+                    map(attribute='tag_name') |
+                    first }}"
+
+- name: Create configuration secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: cloud-config
+        namespace: kube-system
+      type: generic
+      stringData:
+        cloud.conf: |
+          [Global]
+          auth-url={{ lookup('ansible.builtin.env', 'OS_AUTH_URL') }}
+          application-credential-id={{ credential_id }}
+          application-credential-secret={{ credential_secret }}
+
+          [LoadBalancer]
+          floating-network-id={{ floating_network_id }}
+          subnet-id={{ subnet_id }}
+          lb-provider=ovn
+          lb-method=SOURCE_IP_PORT
+
+- name: Set base download URL
+  ansible.builtin.set_fact:
+    manifests_base_url: "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/{{ cpo_release }}/manifests"
+
+- name: Ensure manifests directory
+  ansible.builtin.file:
+    path: '{{ manifest_dir }}'
+    state: directory
+    mode: '0755'
+
+- name: Fetch OpenStack Controller Manager manifests
+  ansible.builtin.get_url:
+    url: '{{ manifests_base_url }}/controller-manager/{{ item }}'
+    dest: '{{ manifest_dir }}/{{ item }}'
+    mode: '0600'
+  loop: '{{ controller_manager_manifests }}'
+
+- name: Apply OpenStack Controller Manager manifests
+  ansible.builtin.k8s:
+    src: '{{ manifest_dir }}/{{ item }}'
+  loop: '{{ controller_manager_manifests }}'
+
+- name: Configure Cinder CSI Plugin
+  ansible.builtin.include_tasks: cinder_csi.yml
+
+- name: Setup Manila CSI Plugin
+  ansible.builtin.include_tasks: manila_csi.yml
+
+- name: Install Nginx Ingress Controller
+  kubernetes.core.helm:
+    release_name: ingress-nginx
+    release_namespace: ingress-nginx
+    create_namespace: True
+    chart_repo_url: https://kubernetes.github.io/ingress-nginx
+    chart_ref: ingress-nginx
+    release_state: present

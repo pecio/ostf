@@ -1,0 +1,118 @@
+---
+- name: K8s Prerequisites
+  hosts: all
+  become: False
+  vars:
+    kubernetes_version: v1.33
+  tasks:
+    - name: Setup module loading
+      become: True
+      community.general.modprobe:
+        name: '{{item}}'
+        state: present
+        persistent: present
+      loop:
+        - overlay
+        - br_netfilter
+
+    - name: Setup IP forwarding
+      become: True
+      ansible.posix.sysctl:
+        name: '{{ item }}'
+        value: "1"
+        sysctl_set: True
+        state: present
+        reload: True
+      loop:
+        - net.bridge.bridge-nf-call-iptables
+        - net.bridge.bridge-nf-call-ip6tables
+        - net.ipv4.ip_forward
+
+    - name: Ensure gpg for importing keyring
+      become: True
+      ansible.builtin.apt:
+        name:
+          - gpg
+        update_cache: True
+        install_recommends: False
+
+    - name: Download CRI-O keyring
+      run_once: True
+      ansible.builtin.uri:
+        url: 'https://download.opensuse.org/repositories/isv:/cri-o:/stable:/{{ kubernetes_version }}/deb/Release.key'
+        return_content: True
+      register: crio_keyring
+
+    - name: Dearmor and install CRI-O keyring
+      become: True
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/gpg
+          - --dearmor
+          - -o
+          - /etc/apt/trusted.gpg.d/cri-o-apt-keyring.gpg
+        stdin: '{{ crio_keyring.content }}'
+
+    - name: Download K8s keyring
+      run_once: True
+      ansible.builtin.uri:
+        url: 'https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb/Release.key'
+        return_content: True
+      register: k8s_keyring
+
+    - name: Dearmor and install K8s keyring
+      become: True
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/gpg
+          - --dearmor
+          - -o
+          - /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg
+        stdin: '{{ k8s_keyring.content }}'
+
+    - name: Install python3-apt
+      become: True
+      ansible.builtin.apt:
+        name: python3-apt
+        update_cache: yes
+
+    - name: Setup CRI-O and K8s repositories
+      become: True
+      ansible.builtin.apt_repository:
+        filename: '{{ item.name }}'
+        repo: '{{ item.repo }}'
+        install_python_apt: False
+        update_cache: False
+      loop:
+        - name: cri-o
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/cri-o-apt-keyring.gpg] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/{{ kubernetes_version }}/deb/ /"
+        - name: kubernetes
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb/ /"
+      loop_control:
+        label: '{{ item.name }}'
+
+    - name: Install Packages
+      become: True
+      ansible.builtin.apt:
+        name:
+          - cri-o
+          - kubelet
+          - kubeadm
+          - kubectl
+        update_cache: yes
+
+    - name: Hold Kubernetes packages
+      become: True
+      ansible.builtin.dpkg_selections:
+        selection: hold
+        name: '{{ item }}'
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+    - name: Enable CRI-O
+      become: True
+      ansible.builtin.systemd_service:
+        name: crio.service
+        enabled: True

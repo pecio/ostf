@@ -1,0 +1,106 @@
+---
+- name: Init cluster
+  run_once: True
+  block:
+    - name: Init cluster
+      become: True
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/kubeadm
+          - init
+          - '--pod-network-cidr={{ pod_network_cidr }}'
+          - '--apiserver-cert-extra-sans={{ ansible_host }}'
+        creates: /etc/kubernetes/kubelet.conf
+      register: kubeadm_init
+
+    - name: Create kubectl directory
+      ansible.builtin.file:
+        path: /home/ubuntu/.kube
+        state: directory
+        mode: '0700'
+
+    - name: Setup kubectl
+      become: True
+      ansible.builtin.copy:
+        remote_src: True
+        src: /etc/kubernetes/admin.conf
+        dest: /home/ubuntu/.kube/config
+        mode: '0600'
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Get Kubernetes version
+      changed_when: False
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/kubectl
+          - version
+          - -o
+          - json
+      register: kubectl_version_cmd
+
+    - name: Get facts for pip role
+      ansible.builtin.setup: {}
+
+    - name: Install python3-kubernetes
+      include_role:
+        name: geerlingguy.pip
+        apply:
+          become: True
+      vars:
+        pip_install_packages:
+          - name: kubernetes
+            version: '~={{ (kubectl_version_cmd.stdout | from_json).serverVersion.minor }}.0'
+
+    - name: Setup Calico
+      ansible.builtin.include_role:
+        name: calico
+
+    - name: Create local .kube directory
+      delegate_to: localhost
+      ansible.builtin.file:
+        path: "{{ lookup('ansible.builtin.env', 'HOME') }}/.kube"
+        state: directory
+        mode: '0700'
+
+    - name: Copy kubeconfig to local
+      ansible.builtin.fetch:
+        src: /home/ubuntu/.kube/config
+        dest: "{{ lookup('ansible.builtin.env', 'HOME') }}/.kube/config"
+        flat: True
+
+    - name: Patch local kubeconfig
+      delegate_to: localhost
+      ansible.builtin.replace:
+        path: "{{ lookup('ansible.builtin.env', 'HOME') }}/.kube/config"
+        regexp: 'https://[0-9.]+:([0-9]+)'
+        replace: 'https://{{ ansible_host }}:\1'
+
+    - name: Ensure local .local/bin directory
+      delegate_to: localhost
+      ansible.builtin.file:
+        path: "{{ lookup('ansible.builtin.env', 'HOME') }}/.local/bin"
+        state: directory
+        mode: '0750'
+
+    - name: Copy kubectl
+      ansible.builtin.fetch:
+        src: /usr/bin/kubectl
+        dest: "{{ lookup('ansible.builtin.env', 'HOME') }}/.local/bin/kubectl"
+        flat: True
+
+- name: Check if joined
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_conf
+
+- name: Join other nodes
+  become: True
+  when: not kubelet_conf.stat.exists
+  ansible.builtin.shell:
+    cmd: |
+      {{ kubeadm_init.stdout_lines[-2] }}
+      {{ kubeadm_init.stdout_lines[-1] }}
+
+- name: Setup Harbor connection
+  ansible.builtin.include_tasks: harbor-connect.yml

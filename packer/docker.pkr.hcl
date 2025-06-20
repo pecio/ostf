@@ -1,6 +1,6 @@
-source "openstack" "dbimage" {
-  image_name                   = "dbimage"
-  flavor                       = "ds512M"
+source "openstack" "docker" {
+  image_name                   = "docker"
+  flavor                       = "ds1G"
   ssh_username                 = "ubuntu"
   external_source_image_url    = "https://cloud-images.ubuntu.com/minimal/daily/jammy/current/jammy-minimal-cloudimg-amd64.img"
   external_source_image_format = "qcow2"
@@ -11,10 +11,10 @@ source "openstack" "dbimage" {
 }
 
 build {
-  name    = "dbimage"
-  sources = ["source.openstack.dbimage"]
+  name    = "docker"
+  sources = ["source.openstack.docker"]
   provisioner "ansible" {
-    playbook_file   = "playbooks/dbimage.yml"
+    playbook_file   = "playbooks/docker.yml"
     user            = "ubuntu"
     extra_arguments = ["--scp-extra-args", "'-O'"]
   }
