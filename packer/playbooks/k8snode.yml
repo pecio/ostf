@@ -3,7 +3,7 @@
   hosts: all
   become: False
   vars:
-    kubernetes_version: v1.31
+    kubernetes_version: v1.33
   tasks:
     - name: Setup module loading
       become: True
@@ -28,10 +28,18 @@
         - net.bridge.bridge-nf-call-ip6tables
         - net.ipv4.ip_forward
 
+    - name: Ensure gpg for importing keyring
+      become: True
+      ansible.builtin.apt:
+        name:
+          - gpg
+        update_cache: True
+        install_recommends: False
+
     - name: Download CRI-O keyring
       run_once: True
       ansible.builtin.uri:
-        url: 'https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ kubernetes_version }}/deb/Release.key'
+        url: 'https://download.opensuse.org/repositories/isv:/cri-o:/stable:/{{ kubernetes_version }}/deb/Release.key'
         return_content: True
       register: crio_keyring
 
@@ -77,7 +85,7 @@
         update_cache: False
       loop:
         - name: cri-o
-          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ kubernetes_version }}/deb/ /"
+          repo: "deb [signed-by=/etc/apt/trusted.gpg.d/cri-o-apt-keyring.gpg] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/{{ kubernetes_version }}/deb/ /"
         - name: kubernetes
           repo: "deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb/ /"
       loop_control:
