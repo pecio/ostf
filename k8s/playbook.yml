@@ -31,7 +31,7 @@
         apply:
           become: True
       vars:
-        helm_version: v3.16.1
+        helm_version: v3.19.2
     - name: Install Git
       become: True
       ansible.builtin.apt:

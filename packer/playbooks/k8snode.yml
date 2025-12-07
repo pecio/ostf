@@ -3,7 +3,7 @@
   hosts: all
   become: False
   vars:
-    kubernetes_version: v1.33
+    kubernetes_version: v1.34
   tasks:
     - name: Setup module loading
       become: True
