@@ -80,3 +80,10 @@
     chart_repo_url: https://kubernetes.github.io/ingress-nginx
     chart_ref: ingress-nginx
     release_state: present
+
+- name: Patch control-plane node for Controller Manager
+  ansible.builtin.command:
+    cmd: "kubectl label node --overwrite -l node-role.kubernetes.io/control-plane node-role.kubernetes.io/control-plane=true"
+  register: label_node
+  changed_when:
+    - "'not labeled' not in label_node.stdout"
